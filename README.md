@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CoU AI Hackathon 2026
 
-## Getting Started
+> Six Hours. One Vision. Infinite Possibilities.
 
-First, run the development server:
+The hackathon management platform for **CoU AI Hackathon 2026**, the flagship competition of CoU Technova 2026, presented by the Faculty of Engineering, Comilla University. Title sponsor: Gigabyte AORUS. Powered by: IT Palace.
+
+| | |
+| :--- | :--- |
+| Event | 24 November 2026, on-site at Comilla University, 6 hours |
+| Prize pool | BDT 25,000 (10,000 / 8,000 / 7,000) |
+| Phase 1 | 12–18 November: free team and idea registration (teams of 1–3) |
+| Phase 2 | 21–23 November: top 30 teams confirm with BDT 1,350 per team |
+
+## Current state
+
+**Planning is complete and awaiting approval. The platform described in `docs/` has not been built yet.**
+
+The code currently in `app/`, `components/`, `lib/` and `db/` is an earlier prototype built on PostgreSQL and Supabase with different event rules (3–4 members, a BDT 1,000 fee at registration, team logins, an online round). The plan replaces it; see `docs/ARCHITECTURE.md` section 2. The files `ADMIN_MANUAL.md`, `FACULTY_HANDOVER_MANUAL.md`, `HOSTING.md`, `LOCAL_SETUP.md` and `ASSUMPTIONS.md` describe that prototype, not the planned platform.
+
+## Planned platform
+
+- Public site: event information, schedule, prizes, rules, FAQ, leaderboard.
+- Two-phase registration: idea submission with documents, then manual bKash / Nagad payment verification for shortlisted teams.
+- Admin panel with five roles: registrations, idea scoring, top-30 shortlist, payments, check-in, results, email log, activity log.
+- Transactional email with retries and duplicate-send prevention.
+
+Stack: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Motion, Lenis, Drizzle ORM, Cloudflare Workers (OpenNext), D1, R2, Turnstile.
+
+## Documents
+
+| Document | Contents |
+| :--- | :--- |
+| [PRD](docs/PRD.md) | Requirements, scope, and the defaults chosen where the brief was ambiguous |
+| [Architecture](docs/ARCHITECTURE.md) | System design, Cloudflare limits and workarounds, costs, folder structure |
+| [App flow](docs/APP_FLOW.md) | Status lifecycle and the four main workflows |
+| [Database schema](docs/DATABASE_SCHEMA.md) | Tables, constraints, atomic operations, retention |
+| [API](docs/API_DOCUMENTATION.md) | Endpoint contracts and the role–permission matrix |
+| [Security](docs/SECURITY.md) | Controls, and the gaps accepted for this release |
+| [Design system](docs/DESIGN_SYSTEM.md) | Tokens, type, components, motion, accessibility |
+| [Development phases](docs/DEVELOPMENT_PHASES.md) | Build order against the event calendar, and what is needed from the organisers |
+| [Deployment](docs/DEPLOYMENT.md) | Cloudflare setup, CI/CD, operations |
+| [Testing](docs/TESTING.md) | Unit, integration, end-to-end and security test plan |
+| [Environment variables](docs/ENVIRONMENT_VARIABLES.md) | Bindings, secrets and configuration |
+
+## Running the existing prototype
+
+Until Phase 2 replaces it, the repository still runs as before; see `LOCAL_SETUP.md`.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+```
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Read `AGENTS.md` before changing code: this Next.js version differs from older releases, and its bundled documentation under `node_modules/next/dist/docs/` is the reference.
