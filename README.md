@@ -10,7 +10,7 @@ The hackathon management platform for **CoU AI Hackathon 2026**, the flagship co
 | Prize pool | BDT 25,000 (10,000 / 8,000 / 7,000) |
 | Phase 1 | 12–18 November: free team and idea registration (teams of 1–3) |
 | Phase 2 | 21–23 November: top 30 teams confirm with BDT 1,350 per team |
-| Production URL | https://cou-hackathon.cou-hackathon.workers.dev |
+| Production URL | https://coutechnova.xyz (also https://cou-hackathon.cou-hackathon.workers.dev) |
 
 ## What is built
 

@@ -25,7 +25,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "APP_ENV": "production",
-    "APP_URL": "https://cou-hackathon.cou-hackathon.workers.dev",
+    "APP_URL": "https://coutechnova.xyz",
     "EMAIL_PROVIDER": "smtp",
     "SMTP_HOST": "smtp.gmail.com",
     "SMTP_PORT": "465",

@@ -25,7 +25,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       WRANGLER_SEND_METRICS: "false"
-      NEXT_PUBLIC_SITE_URL: https://cou-hackathon.cou-hackathon.workers.dev
+      NEXT_PUBLIC_SITE_URL: https://coutechnova.xyz
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
