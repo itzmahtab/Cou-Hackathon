@@ -8,7 +8,7 @@ export function PageHeader({ eyebrow, title, lead, children }: { eyebrow: string
       <div className="container-page relative pb-14 pt-32 md:pb-20 md:pt-40">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="h1 mt-4 max-w-4xl">{title}</h1>
-        {lead && <p className="lead mt-5">{lead}</p>}
+        {lead && <p className="lead on-aura mt-5">{lead}</p>}
         {children}
       </div>
     </div>

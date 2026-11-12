@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #070812;
-  --color-surface: #101225;
-  --color-surface-2: #171a33;
-  --color-line: rgb(148 163 184 / 0.14);
+  --color-bg: #100e0b;
+  --color-surface: #18161a;
+  --color-surface-2: #211f25;
+  --color-line: rgb(255 255 255 / 0.1);
   --color-primary: #8b5cf6;
   --color-primary-strong: #7c3aed;
   --color-primary-soft: #a78bfa;
@@ -62,6 +62,33 @@ html {
   --color-silver: #64748b;
   --color-bronze: #b45309;
 }
+
+/* "Vercel Edge" aura (dark theme only). Layers blend against the body background,
+   so the container is transparent and must not sit inside an isolated stacking context. */
+.aura { position: absolute; inset: 0 0 auto 0; height: 100vh; min-height: 640px; overflow: hidden; pointer-events: none; }
+.aura-layer { position: absolute; inset: 0; transform: translateZ(0); will-change: transform; pointer-events: none; }
+.aura-layer-1 {
+  background: radial-gradient(ellipse 120% 145% at 50% -50%, rgba(0,0,0,0) 58%, rgb(240,240,245) 76%, rgba(0,0,0,0) 84%);
+  mix-blend-mode: screen; filter: blur(63px); opacity: 0.55; /* spec: 0.9; lowered so text over the arc stays readable */
+}
+.aura-layer-2 {
+  background: radial-gradient(ellipse 120% 145% at 50% -50%, rgba(0,0,0,0) 50%, rgba(121,42,242,0.35) 78%, rgba(0,0,0,0) 100%);
+  mix-blend-mode: screen; filter: blur(200px);
+}
+.aura-layer-3 {
+  background: radial-gradient(ellipse 120% 145% at 50% -50%, rgba(0,0,0,0) 82.5%, #ff007a 83.5%, rgba(0,0,0,0) 84.5%);
+  mix-blend-mode: lighten; filter: blur(30px); opacity: 0.75;
+}
+@media (min-width: 768px) {
+  .aura-layer-1 { filter: blur(90px); }
+  .aura-layer-2 { filter: blur(260px); }
+  .aura-layer-3 { filter: blur(43px); }
+}
+:root[data-theme="light"] .aura { display: none; }
+/* In dark mode the aura replaces the hero's coloured glow blobs. */
+:root:not([data-theme="light"]) .hero-glow { display: none; }
+/* Text that crosses the bright arc gets full-strength colour and a soft shadow. */
+:root:not([data-theme="light"]) .on-aura { color: rgb(248 250 252 / 0.92); text-shadow: 0 1px 14px rgb(16 14 11 / 0.85), 0 0 2px rgb(16 14 11 / 0.6); }
 
 /* Long unbroken input (pasted links, test strings) must wrap instead of widening its container. */
 .card, .table td, .notice { overflow-wrap: anywhere; }

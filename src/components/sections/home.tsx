@@ -27,8 +27,8 @@ export function Hero({ settings, phases }: { settings: Settings; phases: Phases 
     <section className="relative isolate flex min-h-[100svh] items-center overflow-hidden pt-24">
       <div aria-hidden className="absolute inset-0 -z-10">
         <div className="bg-grid absolute inset-0" />
-        <div className="animate-drift absolute -left-40 top-10 h-[34rem] w-[34rem] rounded-full bg-primary/25 blur-[130px]" />
-        <div className="animate-drift absolute -right-40 bottom-0 h-[30rem] w-[30rem] rounded-full bg-secondary/20 blur-[130px] [animation-delay:-8s]" />
+        <div className="hero-glow animate-drift absolute -left-40 top-10 h-[34rem] w-[34rem] rounded-full bg-primary/25 blur-[130px]" />
+        <div className="hero-glow animate-drift absolute -right-40 bottom-0 h-[30rem] w-[30rem] rounded-full bg-secondary/20 blur-[130px] [animation-delay:-8s]" />
         <HeroVisual />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
       </div>
@@ -45,12 +45,12 @@ export function Hero({ settings, phases }: { settings: Settings; phases: Phases 
           </h1>
         </Reveal>
         <Reveal delay={0.16}>
-          <p className="lead mt-7">
+          <p className="lead on-aura mt-7">
             CoU AI Hackathon 2026 brings student builders to Comilla University for one focused sprint: an idea, a team of up to three, three days of pre-build and a five-hour on-site final to make it real.
           </p>
         </Reveal>
         <Reveal delay={0.22}>
-          <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-fg">
+          <ul className="on-aura mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-fg">
             <li className="flex items-center gap-2">
               <CalendarDays size={17} className="text-primary-soft" aria-hidden /> {formatDhakaDate(settings.eventStartAt)}
             </li>
