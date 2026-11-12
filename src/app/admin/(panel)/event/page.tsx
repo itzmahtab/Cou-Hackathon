@@ -59,7 +59,7 @@ export default async function EventDay({ searchParams }: { searchParams: Promise
                   </p>
                   <ul className="mt-3 grid gap-2 sm:grid-cols-3">
                     {members.map((m) => (
-                      <li key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-3 py-2 text-sm">
+                      <li key={m.id} className="flex items-center justify-between gap-2 rounded-lg bg-fg/[0.03] px-3 py-2 text-sm">
                         <span>
                           {m.fullName} <span className="text-xs text-muted">· {m.tshirtSize}</span>
                         </span>

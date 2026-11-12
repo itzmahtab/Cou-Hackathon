@@ -5,6 +5,11 @@
   "compatibility_date": "2026-10-01",
   "account_id": "30d63e455590ff80b226afa8e9e33218",
   "workers_dev": true,
+  // coutechnova.xyz is a Cloudflare zone on this account; www redirects to the apex in worker.ts.
+  "routes": [
+    { "pattern": "coutechnova.xyz", "custom_domain": true },
+    { "pattern": "www.coutechnova.xyz", "custom_domain": true }
+  ],
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
@@ -21,8 +26,13 @@
   "vars": {
     "APP_ENV": "production",
     "APP_URL": "https://cou-hackathon.cou-hackathon.workers.dev",
-    "EMAIL_PROVIDER": "log",
-    "EMAIL_FROM": "CoU AI Hackathon <no-reply@cou-hackathon.workers.dev>",
+    "EMAIL_PROVIDER": "smtp",
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "465",
+    "SMTP_USER": "coutechnova2026@gmail.com",
+    "EMAIL_FROM": "CoU AI Hackathon 2026 <coutechnova2026@gmail.com>",
+    "EMAIL_REPLY_TO": "coutechnova2026@gmail.com",
+    "ADMIN_NOTIFY_EMAIL": "coutechnova2026@gmail.com",
     "EMAIL_BATCH_SIZE": "10"
   }
 }

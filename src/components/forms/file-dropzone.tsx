@@ -117,7 +117,7 @@ export function FileDropzone({ label, hint, category, accept, maxBytes, uploadSe
           // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
           <img src={value.previewUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
         ) : (
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-muted">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-fg/[0.05] text-muted">
             {busy ? <Loader2 className="animate-spin" size={22} aria-hidden /> : value ? <FileText size={22} aria-hidden /> : <UploadCloud size={22} aria-hidden />}
           </span>
         )}
@@ -125,7 +125,7 @@ export function FileDropzone({ label, hint, category, accept, maxBytes, uploadSe
           {busy ? (
             <>
               <p className="font-medium">Uploading… {progress}%</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuenow={progress ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${label} upload`}>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-fg/10" role="progressbar" aria-valuenow={progress ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${label} upload`}>
                 <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${progress}%` }} />
               </div>
             </>

@@ -3,7 +3,7 @@ export const SITE = {
   title: "CoU AI Hackathon 2026 | Build Beyond Imagination",
   description:
     "Join CoU AI Hackathon 2026 at Comilla University on 24 November. Showcase your AI innovation, compete with talented students, and win from a BDT 25,000 prize pool.",
-  tagline: "Six Hours. One Vision. Infinite Possibilities.",
+  tagline: "Five Hours. One Vision. Infinite Possibilities.",
   // Canonical origin for metadata. Set NEXT_PUBLIC_SITE_URL at build time for the real domain.
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   parent: "CoU Technova 2026",

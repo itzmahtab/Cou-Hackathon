@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { runAfter } from "@/lib/ctx";
+import { AppError } from "@/lib/http";
 import { requireAdmin, runAction, type ActionResult } from "@/lib/server";
 import { drainOutbox, resendEmail } from "@/features/email/outbox";
 import { autoRank, publishResults, resultSchema, saveResult, unpublishResults } from "@/features/results/service";
@@ -60,5 +61,33 @@ export async function drainNowAction(): Promise<ActionResult> {
     const r = await drainOutbox(ctx, 25);
     revalidatePath("/admin/emails");
     return { message: `Sent ${r.sent}, failed ${r.failed}.` };
+  });
+}
+
+/** Sends one real email to the signed-in admin and reports the provider's exact answer. */
+export async function testEmailAction(): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("emails.manage");
+    const { getProvider } = await import("@/features/email/providers");
+    const { emailEnv } = await import("@/features/email/config");
+    const { renderEmail } = await import("@/features/email/templates");
+    let provider;
+    try {
+      provider = getProvider(await emailEnv(ctx));
+    } catch (err) {
+      throw new AppError(400, "EMAIL_NOT_CONFIGURED", `Email is not configured: ${(err as Error).message}`);
+    }
+    try {
+      await provider.verify?.();
+      const email = renderEmail("announcement", { subject: "Test email from CoU AI Hackathon 2026", body: "If you can read this, the website can send email.", name: admin.name });
+      const res = await provider.send(admin.email, email);
+      return { message: `Sent to ${admin.email}${res.messageId ? ` (id ${res.messageId})` : ""}. Check that inbox, including spam.` };
+    } catch (err) {
+      const e = err as Error & { code?: string; responseCode?: number };
+      const detail = [e.code, e.responseCode].filter(Boolean).join(" ");
+      throw new AppError(502, "EMAIL_FAILED", `Sending failed${detail ? ` (${detail})` : ""}: ${e.message}`);
+    } finally {
+      provider.close?.();
+    }
   });
 }

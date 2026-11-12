@@ -13,7 +13,7 @@ One Cloudflare Worker built with `@opennextjs/cloudflare`, one D1 database and o
 | Worker secrets | `SESSION_SECRET` and `CRON_SECRET` set |
 | Site URL | https://cou-hackathon.cou-hackathon.workers.dev |
 | Deploys | GitHub Actions `deploy.yml`, on every push to `main` and to `claude/awesome-knuth-v2adha`. Needs the `CLOUDFLARE_API_TOKEN` repository secret |
-| Email | Not configured: `EMAIL_PROVIDER=log`, so production emails stay queued until a provider is set (section 9) |
+| Email | Gmail SMTP via Nodemailer, from coutechnova2026@gmail.com. Needs the `SMTP_PASSWORD` secret (a Gmail App Password); until then emails stay queued (section 9) |
 | Turnstile | Not configured: the check is skipped (section 10) |
 | Workers plan | Free. Admin sign-in needs Workers Paid; see `ARCHITECTURE.md` section 11 |
 
@@ -121,15 +121,18 @@ Migrations run before the deploy and must be backward compatible with the curren
 
 Run the retention purge at 30 and 90 days, export a final anonymised results snapshot, revoke the API tokens, and delete the preview resources.
 
-## 9. Email
+## 9. Email (Gmail through Nodemailer)
 
-1. Create a Brevo (or Resend) account and add the sending domain. Publish the SPF, DKIM and DMARC records it gives you in Cloudflare DNS. A `workers.dev` address cannot be a verified sender, so this needs a domain you control.
-2. Create an API key with send permission only, then:
-   ```bash
-   pnpm wrangler secret put EMAIL_API_KEY
-   ```
-3. In `wrangler.jsonc`, set `EMAIL_PROVIDER` to `brevo` (or `resend`), `EMAIL_FROM` to an address on the verified domain, and optionally `EMAIL_REPLY_TO` and `ADMIN_NOTIFY_EMAIL`. Push to deploy.
-4. Everything queued before this is sent by the next cron run. Check Admin → Emails.
+Production sends from `coutechnova2026@gmail.com` through Gmail's SMTP server using Nodemailer, which runs on Workers through `nodejs_compat` (`node:net`, `node:tls`). The settings are in `wrangler.jsonc`: `EMAIL_PROVIDER=smtp`, `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `ADMIN_NOTIFY_EMAIL`.
+
+The only missing piece is the password, which must be a Gmail **App Password**, not the account password:
+
+1. Sign in to the Gmail account, open https://myaccount.google.com/security, and turn on **2-Step Verification**.
+2. Open https://myaccount.google.com/apppasswords, create an app password named "CoU Hackathon", and copy the 16 characters.
+3. Cloudflare dashboard → Workers & Pages → `cou-hackathon` → Settings → Variables and Secrets → Add → type **Secret**, name `SMTP_PASSWORD`, value the 16 characters (spaces optional) → Deploy. Or, from a machine with the repository: `pnpm wrangler secret put SMTP_PASSWORD`.
+4. Admin → Emails → **Send me a test email**. It reports Gmail's exact answer if anything is wrong.
+
+Until the password is set, emails wait in the queue without using up their retries; Admin → Emails shows why. Gmail allows about 500 recipients a day from a free account, which covers each bulk notification for this event (about 350 recipients); larger sends simply finish the next day.
 
 ## 10. Turnstile
 

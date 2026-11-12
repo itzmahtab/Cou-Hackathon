@@ -1,9 +1,10 @@
-import { ArrowRight, Megaphone } from "lucide-react";
+import { ArrowRight, FileText, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { About, Domains, FinalCta, Hero, HomeFaq, PrizeCards, ScheduleList, Sponsors, Stats, TeamFormation, Timeline } from "@/components/sections/home";
 import { Reveal } from "@/components/ui/motion";
 import { SectionHeader } from "@/components/ui/page-header";
-import { RULES } from "@/config/content";
+import { RULEBOOK_URL, RULES } from "@/config/content";
+import { HelplineGrid } from "@/components/sections/helpline";
 import { SITE } from "@/config/site";
 import { getAnnouncements, getPublicEvent, getSchedule } from "@/features/event/queries";
 import { getCtx } from "@/lib/ctx";
@@ -103,12 +104,26 @@ export default async function HomePage() {
             </Reveal>
           ))}
         </ul>
-        <Link href="/rules" className="btn btn-secondary mt-8">
-          Read all rules <ArrowRight size={17} aria-hidden />
-        </Link>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <a href={RULEBOOK_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+            <FileText size={17} aria-hidden /> Rule book (PDF)
+          </a>
+          <Link href="/rules" className="btn btn-secondary">
+            Read all rules <ArrowRight size={17} aria-hidden />
+          </Link>
+        </div>
       </section>
 
       <HomeFaq settings={settings} />
+
+      <section id="helpline" className="section container-page">
+        <Reveal>
+          <SectionHeader eyebrow="Helpline" title="Questions? Call or WhatsApp us" lead="Our volunteers can help with registration, payment and anything about the event day. Please mention your registration ID if you have one." />
+        </Reveal>
+        <div className="mt-10">
+          <HelplineGrid />
+        </div>
+      </section>
 
       {settings.organisers.length > 0 && (
         <section className="section container-page">

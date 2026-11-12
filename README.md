@@ -1,12 +1,12 @@
 # CoU AI Hackathon 2026
 
-> Six Hours. One Vision. Infinite Possibilities.
+> Five Hours. One Vision. Infinite Possibilities.
 
 The hackathon management platform for **CoU AI Hackathon 2026**, the flagship competition of CoU Technova 2026, presented by the Faculty of Engineering, Comilla University. Title sponsor: Gigabyte AORUS. Powered by: IT Palace.
 
 | | |
 | :--- | :--- |
-| Event | 24 November 2026, on-site at Comilla University, 6 hours |
+| Event | 24 November 2026, on-site at Comilla University, 5 hours |
 | Prize pool | BDT 25,000 (10,000 / 8,000 / 7,000) |
 | Phase 1 | 12–18 November: free team and idea registration (teams of 1–3) |
 | Phase 2 | 21–23 November: top 30 teams confirm with BDT 1,350 per team |
@@ -33,7 +33,9 @@ The hackathon management platform for **CoU AI Hackathon 2026**, the flagship co
 - Activity log.
 - Settings, admin accounts and the data-retention purge.
 
-**Platform:** Next.js 16 on Cloudflare Workers (OpenNext), D1 through Drizzle, a private R2 bucket, Argon2id passwords with database sessions, D1-backed rate limits, optional Turnstile, and an email outbox with retries drained every minute by a cron trigger.
+**Theme:** dark by default with a light mode toggle; the choice is remembered.
+
+**Platform:** Next.js 16 on Cloudflare Workers (OpenNext), D1 through Drizzle, a private R2 bucket, Argon2id passwords with database sessions, D1-backed rate limits, optional Turnstile, and an email outbox (Gmail SMTP through Nodemailer) with retries, drained every minute by a cron trigger.
 
 ## Before the event goes live
 
@@ -41,7 +43,7 @@ The hackathon management platform for **CoU AI Hackathon 2026**, the flagship co
 | :--- | :--- | :--- |
 | `CLOUDFLARE_API_TOKEN` GitHub secret | Needed for automatic deploys | Repository → Settings → Secrets → Actions |
 | First super admin | Create once deployed | `pnpm admin:create -- --remote` |
-| Email provider | Not configured: emails queue until it is | `docs/DEPLOYMENT.md` § Email |
+| Gmail App Password (`SMTP_PASSWORD`) | Needed: emails queue until it is set | `docs/DEPLOYMENT.md` § 9 |
 | Turnstile | Optional but recommended | `docs/DEPLOYMENT.md` § Turnstile |
 | bKash and Nagad numbers, contacts, organisers | Enter in Admin → Settings | |
 

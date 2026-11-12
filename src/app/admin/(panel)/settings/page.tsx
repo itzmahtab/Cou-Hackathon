@@ -1,5 +1,6 @@
 import { asc } from "drizzle-orm";
-import { createAdminAction, purgeIdentityFilesAction, resetAdminPasswordAction, saveSettingsAction, updateAdminAction } from "@/app/admin/actions/settings";
+import { createAdminAction, purgeIdentityFilesAction, resetAdminPasswordAction, saveSettingsAction, saveSmtpPasswordAction, updateAdminAction } from "@/app/admin/actions/settings";
+import { smtpPasswordSource } from "@/features/email/config";
 import { ActionForm } from "@/components/admin/action-form";
 import { AdminHeader, Section } from "@/components/admin/ui";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
@@ -16,7 +17,7 @@ const local = (iso: string) => new Date(Date.parse(iso) + 6 * 3600 * 1000).toISO
 
 export default async function SettingsPage() {
   const { ctx, admin } = await requireAdminPage("settings.manage");
-  const [s, people] = await Promise.all([getSettings(ctx), ctx.db.select().from(admins).orderBy(asc(admins.createdAt))]);
+  const [s, people, smtpSource] = await Promise.all([getSettings(ctx), ctx.db.select().from(admins).orderBy(asc(admins.createdAt)), smtpPasswordSource(ctx)]);
   const text = (name: string, label: string, value: string | number, extra: Record<string, unknown> = {}) => (
     <label className="text-sm">
       <span className="field-label">{label}</span>
@@ -64,6 +65,43 @@ export default async function SettingsPage() {
               </label>
             </div>
           </ActionForm>
+        </Section>
+
+        <Section title="Email (Gmail)">
+          <p className="text-sm text-muted">
+            Emails are sent from <strong className="text-fg">{ctx.env.SMTP_USER ?? "—"}</strong> through Gmail using Nodemailer. Status:{" "}
+            {smtpSource ? (
+              <span className="badge badge-success">Password set{smtpSource === "secret" ? " (Cloudflare secret)" : ""}</span>
+            ) : (
+              <span className="badge badge-danger">No password: emails are waiting in the queue</span>
+            )}
+          </p>
+          <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-sm text-muted">
+            <li>
+              Signed in to that Gmail account, turn on 2-Step Verification at{" "}
+              <a className="text-primary-soft underline" href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer">
+                myaccount.google.com/security
+              </a>
+              .
+            </li>
+            <li>
+              Create an App Password at{" "}
+              <a className="text-primary-soft underline" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">
+                myaccount.google.com/apppasswords
+              </a>{" "}
+              and paste the 16 characters below. Your normal Gmail password will not work.
+            </li>
+          </ol>
+          {smtpSource !== "secret" && (
+            <ActionForm action={saveSmtpPasswordAction} submitLabel="Save and send queued emails" className="mt-4" resetOnSuccess>
+              <input name="smtpPassword" type="password" autoComplete="off" placeholder="abcd efgh ijkl mnop" aria-label="Gmail App Password" required className="input max-w-sm font-mono" />
+            </ActionForm>
+          )}
+          {smtpSource === "settings" && (
+            <ActionForm action={saveSmtpPasswordAction} submitLabel="Remove saved password" submitClass="btn-ghost" confirm="Remove the saved Gmail App Password? Emails will stop sending." className="mt-2">
+              <input type="hidden" name="clear" value="1" />
+            </ActionForm>
+          )}
         </Section>
 
         <Section title="Admin accounts">

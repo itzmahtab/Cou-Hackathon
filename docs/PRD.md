@@ -8,7 +8,7 @@ A hackathon management platform for **CoU AI Hackathon 2026**, the flagship comp
 
 | Fact | Value |
 | :--- | :--- |
-| Format | On-site, 6 hours |
+| Format | On-site, 5 hours |
 | Venue | Comilla University, Bangladesh |
 | Event date | 24 November 2026 |
 | Prize pool | BDT 25,000 (10,000 / 8,000 / 7,000) |
@@ -17,7 +17,7 @@ A hackathon management platform for **CoU AI Hackathon 2026**, the flagship comp
 | Evaluation and shortlist | 19–20 November 2026 (editable) |
 | Phase 2 (payment, top 30 only) | 21–23 November 2026 |
 | Fee | BDT 1,350 per **team**, bKash or Nagad Send Money, verified by hand |
-| Tagline | "Six Hours. One Vision. Infinite Possibilities." |
+| Tagline | "Five Hours. One Vision. Infinite Possibilities." |
 
 All dates are interpreted in **Asia/Dhaka (UTC+6)**. A window "12–18 November" opens at 00:00 on the 12th and closes at 23:59:59 on the 18th. Timestamps are stored in UTC.
 

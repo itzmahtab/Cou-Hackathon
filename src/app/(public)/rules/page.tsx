@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { FileText } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { RULES } from "@/config/content";
+import { RULEBOOK_URL, RULES } from "@/config/content";
 import { getPublicEvent } from "@/features/event/queries";
 import { getCtx } from "@/lib/ctx";
 import { formatDhaka } from "@/lib/time";
@@ -11,7 +12,13 @@ export default async function RulesPage() {
   const { settings } = await getPublicEvent(getCtx());
   return (
     <>
-      <PageHeader eyebrow="Rules and guidelines" title="Play fair. Build boldly." lead="By registering, every team member agrees to these rules." />
+      <PageHeader eyebrow="Rules and guidelines" title="Play fair. Build boldly." lead="By registering, every team member agrees to these rules. The rule book is the full, official version.">
+        <div className="mt-7">
+          <a href={RULEBOOK_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+            <FileText size={17} aria-hidden /> Open the rule book (PDF)
+          </a>
+        </div>
+      </PageHeader>
       <div className="container-page py-14 md:py-20">
         <dl className="mb-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[

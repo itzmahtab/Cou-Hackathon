@@ -49,7 +49,7 @@ ${l.paragraphs.map((p) => `<p style="margin:0 0 14px">${e(p)}</p>`).join("")}
 ${facts}${cta}
 ${l.footnote ? `<p style="margin:18px 0 0;color:#64748b;font-size:13px">${e(l.footnote)}</p>` : ""}
 </td></tr>
-<tr><td style="background:#f8fafc;padding:18px 28px;color:#64748b;font-size:12px;line-height:1.6">${EVENT} · 24 November 2026 · Comilla University, Bangladesh<br>Six Hours. One Vision. Infinite Possibilities.<br>You are receiving this because your team registered for the hackathon.</td></tr>
+<tr><td style="background:#f8fafc;padding:18px 28px;color:#64748b;font-size:12px;line-height:1.6">${EVENT} · 24 November 2026 · Comilla University, Bangladesh<br>Five Hours. One Vision. Infinite Possibilities.<br>You are receiving this because your team registered for the hackathon.</td></tr>
 </table></td></tr></table></body></html>`;
   const text = [
     EVENT,
@@ -103,7 +103,8 @@ export const TEMPLATES = {
       heading: "Congratulations. You are in.",
       greeting: `Hi ${s(p.name)},`,
       paragraphs: [
-        `Team ${s(p.teamName)} has been selected for the on-site round of ${EVENT}.`,
+        `Team ${s(p.teamName)} has been selected for the final round of ${EVENT}.`,
+        "You can start building your project now: 21 – 23 November is the pre-build period, and the five-hour on-site final is on 24 November.",
         `To confirm your place, send the team fee of BDT ${s(p.feeBdt)} by bKash or Nagad Send Money and submit the transaction ID on the website before ${s(p.deadline)}. The fee is per team, not per person.`,
         "An organiser checks every transaction by hand. You will get another email when yours is verified.",
       ],
@@ -199,7 +200,7 @@ export const TEMPLATES = {
       subject: `${EVENT}: final results are published`,
       heading: "The results are in.",
       greeting: `Hi ${s(p.name)},`,
-      paragraphs: [`Thank you for six hours of building. The final leaderboard for ${EVENT} is now public.`],
+      paragraphs: [`Thank you for building with us. The final leaderboard for ${EVENT} is now public.`],
       cta: { label: "See the leaderboard", url: s(p.leaderboardUrl) },
     }),
 

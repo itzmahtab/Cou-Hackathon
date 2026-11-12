@@ -3,6 +3,10 @@ import type { RenderedEmail } from "./templates";
 
 export interface EmailProvider {
   send(to: string, email: RenderedEmail): Promise<{ messageId: string | null }>;
+  /** Checks the connection and login without sending anything. */
+  verify?(): Promise<void>;
+  /** Releases any open connection at the end of a batch. */
+  close?(): void;
 }
 
 function parseFrom(from: string): { name: string; email: string } {
@@ -57,6 +61,68 @@ export function getProvider(env: RuntimeEnv): EmailProvider {
             { from: env.EMAIL_FROM, to: [to], subject: email.subject, html: email.html, text: email.text, ...(replyTo ? { reply_to: replyTo } : {}) },
           );
           return { messageId: typeof data.id === "string" ? data.id : null };
+        },
+      };
+    case "smtp": {
+      // Nodemailer over SMTP (Gmail: smtp.gmail.com, port 465, an App Password).
+      // Workers provide node:net and node:tls through nodejs_compat, which Nodemailer uses.
+      if (!env.SMTP_USER || !env.SMTP_PASSWORD) throw new Error("SMTP_USER or SMTP_PASSWORD is not set.");
+      const port = Number(env.SMTP_PORT ?? 465);
+      const host = env.SMTP_HOST ?? "smtp.gmail.com";
+      let transport: import("nodemailer").Transporter | null = null;
+      const get = async () => {
+        if (!transport) {
+          const nodemailer = (await import("nodemailer")).default;
+          transport = nodemailer.createTransport({
+            host,
+            port,
+            // Nodemailer normally resolves the host and dials the raw IP addresses (IPv6
+            // first). Cloudflare's socket layer refuses that ("cannot connect to the
+            // specified address"), so hand it a TLS socket opened by hostname instead and
+            // let the platform do the lookup.
+            getSocket: ((_opts: unknown, callback: (err: Error | null, socket?: false | { connection?: import("node:net").Socket; secured?: boolean }) => void) => {
+              import("node:tls")
+                .then((tls) => {
+                  if (port !== 465) return callback(null, false);
+                  const connection = tls.connect({ host, port, servername: host });
+                  callback(null, { connection, secured: true });
+                })
+                .catch((err: Error) => callback(err));
+            }) as never,
+            secure: port === 465,
+            auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
+            // One connection reused for the whole batch, closed by close().
+            pool: true,
+            maxConnections: 1,
+            // os.hostname() is not meaningful in a Worker; name the client explicitly.
+            name: "cou-hackathon.workers.dev",
+            connectionTimeout: 15_000,
+            greetingTimeout: 15_000,
+            socketTimeout: 30_000,
+          });
+        }
+        return transport;
+      };
+      return {
+        async send(to, email) {
+          const info = await (await get()).sendMail({ from: env.EMAIL_FROM, to, replyTo: replyTo, subject: email.subject, html: email.html, text: email.text });
+          return { messageId: info.messageId ?? null };
+        },
+        async verify() {
+          await (await get()).verify();
+        },
+        close() {
+          transport?.close();
+          transport = null;
+        },
+      };
+    }
+    case "test-fail":
+      // Test-only provider whose sends always fail, to exercise retries.
+      if (env.APP_ENV !== "test") throw new Error("test-fail is only for tests.");
+      return {
+        async send() {
+          throw new Error("simulated provider outage");
         },
       };
     case "log":

@@ -11,7 +11,7 @@ const CRITERIA = [
   ["Problem relevance", 20, "Is this a real problem, for real people, worth solving?"],
   ["Innovation", 25, "Is the approach new, or a clear improvement on what exists?"],
   ["AI application", 25, "Is AI essential to the solution and used soundly?"],
-  ["Feasibility", 15, "Can a working version be built in six hours?"],
+  ["Feasibility", 15, "Can a working version be built in the pre-build and the five-hour final?"],
   ["Potential impact", 15, "If it worked, how much would it matter?"],
 ] as const;
 
@@ -37,7 +37,7 @@ export default async function ChallengesPage() {
                     <p className="font-semibold">{name}</p>
                     <p className="mt-1 text-sm text-muted">{question}</p>
                   </div>
-                  <div aria-hidden className="hidden h-2 w-40 overflow-hidden rounded-full bg-white/10 sm:block">
+                  <div aria-hidden className="hidden h-2 w-40 overflow-hidden rounded-full bg-fg/10 sm:block">
                     <div className="h-full rounded-full bg-gradient-to-r from-primary to-secondary" style={{ width: `${(points / 25) * 100}%` }} />
                   </div>
                 </div>

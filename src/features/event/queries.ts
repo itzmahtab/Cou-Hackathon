@@ -8,8 +8,8 @@ import { windowState, type WindowState } from "@/lib/time";
 export const DEFAULT_SCHEDULE = [
   { title: "Registration and check-in", description: "Collect your team pass and T-shirts. Bring your student ID card." },
   { title: "Opening ceremony", description: "Welcome from the Faculty of Engineering and the sponsors." },
-  { title: "Problem briefing", description: "Rules, judging criteria and how the six hours will run." },
-  { title: "Hackathon starts", description: "The clock begins. Six hours to build." },
+  { title: "Final briefing", description: "Rules, judging criteria and how the five-hour final will run." },
+  { title: "Final build starts", description: "The clock begins. Five hours to finish your project." },
   { title: "Development and mentoring", description: "Mentors move between teams. Ask early." },
   { title: "Submission deadline", description: "Hands off keyboards. Late submissions are not judged." },
   { title: "Project presentations", description: "Each team demonstrates its solution to the judges." },

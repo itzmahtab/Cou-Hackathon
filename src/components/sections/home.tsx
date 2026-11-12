@@ -27,8 +27,8 @@ export function Hero({ settings, phases }: { settings: Settings; phases: Phases 
     <section className="relative isolate flex min-h-[100svh] items-center overflow-hidden pt-24">
       <div aria-hidden className="absolute inset-0 -z-10">
         <div className="bg-grid absolute inset-0" />
-        <div className="animate-drift absolute -left-40 top-10 h-[34rem] w-[34rem] rounded-full bg-primary/25 blur-[130px]" />
-        <div className="animate-drift absolute -right-40 bottom-0 h-[30rem] w-[30rem] rounded-full bg-secondary/20 blur-[130px] [animation-delay:-8s]" />
+        <div className="hero-glow animate-drift absolute -left-40 top-10 h-[34rem] w-[34rem] rounded-full bg-primary/25 blur-[130px]" />
+        <div className="hero-glow animate-drift absolute -right-40 bottom-0 h-[30rem] w-[30rem] rounded-full bg-secondary/20 blur-[130px] [animation-delay:-8s]" />
         <HeroVisual />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
       </div>
@@ -41,16 +41,16 @@ export function Hero({ settings, phases }: { settings: Settings; phases: Phases 
         </Reveal>
         <Reveal delay={0.08}>
           <h1 className="h-display mt-7 max-w-5xl">
-            BUILD THE FUTURE. <span className="text-gradient">IN SIX HOURS.</span>
+            BUILD THE FUTURE. <span className="text-gradient">IN FIVE HOURS.</span>
           </h1>
         </Reveal>
         <Reveal delay={0.16}>
-          <p className="lead mt-7">
-            CoU AI Hackathon 2026 brings student builders to Comilla University for one focused sprint: an idea, a team of up to three, and six hours to make it real.
+          <p className="lead on-aura mt-7">
+            CoU AI Hackathon 2026 brings student builders to Comilla University for one focused sprint: an idea, a team of up to three, three days of pre-build and a five-hour on-site final to make it real.
           </p>
         </Reveal>
         <Reveal delay={0.22}>
-          <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-fg">
+          <ul className="on-aura mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-fg">
             <li className="flex items-center gap-2">
               <CalendarDays size={17} className="text-primary-soft" aria-hidden /> {formatDhakaDate(settings.eventStartAt)}
             </li>
@@ -102,7 +102,7 @@ export function Sponsors() {
 
 export function Stats({ settings }: { settings: Settings }) {
   const stats = [
-    { icon: Clock, value: "6", unit: "hours", label: "to build a working solution" },
+    { icon: Clock, value: "3d + 5h", unit: "", label: "pre-build, then the on-site final" },
     { icon: Trophy, value: "25,000", unit: "BDT", label: "total prize pool" },
     { icon: Brain, value: String(settings.shortlistCapacity), unit: "teams", label: "selected for the on-site round" },
     { icon: Users, value: "1–3", unit: "people", label: "per team, any university" },
@@ -135,7 +135,7 @@ export function About() {
             eyebrow="About the hackathon"
             title={
               <>
-                Not just six hours of coding. Six hours in which an idea <span className="text-gradient">gets the chance to become real.</span>
+                Not just a few days of coding. A few days in which an idea <span className="text-gradient">gets the chance to become real.</span>
               </>
             }
           />
@@ -170,8 +170,8 @@ export function timelineSteps(settings: Settings) {
   return [
     { when: `${day(settings.phase1OpenAt)} – ${day(settings.phase1CloseAt)}`, title: "Phase 1: Pre-registration", body: "Register your team and submit your idea. Free.", href: "/register" },
     { when: settings.shortlistAnnouncement.replace(/ 2026$/, ""), title: "Evaluation and shortlist", body: `Reviewers score every idea. The top ${settings.shortlistCapacity} teams are announced by email.`, href: "/status" },
-    { when: `${day(settings.phase2OpenAt)} – ${day(settings.phase2CloseAt)}`, title: "Phase 2: Payment and confirmation", body: `Shortlisted teams pay ${bdt(settings.feeBdt)} per team and are confirmed.`, href: "/payment" },
-    { when: day(settings.eventStartAt), title: "Hackathon day", body: "Six hours on campus. Build, present, win.", href: "/schedule" },
+    { when: `${day(settings.phase2OpenAt)} – ${day(settings.phase2CloseAt)}`, title: "Phase 2: Pre-build and payment", body: `Shortlisted teams start building their project and pay ${bdt(settings.feeBdt)} per team to confirm.`, href: "/payment" },
+    { when: day(settings.eventStartAt), title: "Final day", body: "A five-hour on-site final. Finish, present, win.", href: "/schedule" },
   ];
 }
 
@@ -322,7 +322,7 @@ export function FinalCta({ phases }: { phases: Phases }) {
           </div>
           <p className="eyebrow">Your idea could change tomorrow</p>
           <h2 className="h1 mx-auto mt-4 max-w-3xl">Build beyond imagination.</h2>
-          <p className="lead mx-auto mt-5">Phase 1 is free and takes about ten minutes. All you need is a team, a student ID and an idea worth six hours.</p>
+          <p className="lead mx-auto mt-5">Phase 1 is free and takes about ten minutes. All you need is a team, a student ID and an idea worth building.</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Link href={cta.href} className="btn btn-primary">
               {cta.label} <ArrowRight size={18} aria-hidden />

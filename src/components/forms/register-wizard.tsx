@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm, type FieldPath } from "react-hook-form";
 import { registrationSchema, type RegistrationDraft, type RegistrationInput } from "@/features/registration/schema";
 import { cn } from "@/lib/cn";
+import { RULEBOOK_URL } from "@/config/content";
 import { TSHIRT_SIZES } from "@/lib/constants";
 import { Field } from "./field";
 import { FileDropzone, type UploadedFile } from "./file-dropzone";
@@ -378,7 +379,7 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
           {(
             [
               ["problemStatement", "Problem statement", "What problem are you solving, and who has it?"],
-              ["proposedSolution", "Proposed solution", "What will you build in six hours?"],
+              ["proposedSolution", "Proposed solution", "What will you build in five hours?"],
               ["aiComponent", "AI component / technologies", "Which models, data and techniques will you use, and why?"],
               ["expectedImpact", "Expected impact", "Who benefits, and how would you measure it?"],
             ] as const
@@ -477,7 +478,7 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
               <legend className="field-label">Confirmation</legend>
               {(
                 [
-                  ["rules", <>I have read and agree to the <Link href={rulesHref} target="_blank" className="text-primary-soft underline underline-offset-4">event rules</Link>.</>],
+                  ["rules", <>I have read and agree to the <Link href={rulesHref} target="_blank" className="text-primary-soft underline underline-offset-4">event rules</Link> and the <a href={RULEBOOK_URL} target="_blank" rel="noopener noreferrer" className="text-primary-soft underline underline-offset-4">rule book</a>.</>],
                   ["accuracy", "I confirm that all the information above is accurate."],
                   ["communications", "I agree to receive emails and messages about this event."],
                 ] as const

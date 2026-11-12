@@ -38,7 +38,10 @@ export function sniffFile(buf: Uint8Array): Sniffed | null {
   if (startsWith(buf, ascii("RIFF")) && startsWith(buf, ascii("WEBP"), 8)) return { ext: "webp", contentType: "image/webp", kind: "image" };
   if (startsWith(buf, ascii("%PDF-"))) return { ext: "pdf", contentType: "application/pdf", kind: "document" };
   // DOCX is a ZIP whose directory names word/document.xml and [Content_Types].xml.
-  if (startsWith(buf, [0x50, 0x4b, 0x03, 0x04]) && contains(buf, ascii("[Content_Types].xml")) && contains(buf, ascii("word/document.xml"))) {
+  // The ZIP's first entries and its central directory (at the end) hold the names, so only
+  // the head and tail are scanned; a byte-by-byte search of a 10 MB file costs too much CPU.
+  const edges = buf.length > 131072 ? new Uint8Array([...buf.subarray(0, 65536), ...buf.subarray(buf.length - 65536)]) : buf;
+  if (startsWith(buf, [0x50, 0x4b, 0x03, 0x04]) && contains(edges, ascii("[Content_Types].xml")) && contains(edges, ascii("word/document.xml"))) {
     return { ext: "docx", contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", kind: "document" };
   }
   return null;

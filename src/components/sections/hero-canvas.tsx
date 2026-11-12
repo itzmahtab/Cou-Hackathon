@@ -51,6 +51,8 @@ export default function HeroCanvas() {
 
     const draw = () => {
       g.clearRect(0, 0, w, h);
+      // Darker nodes on the light theme so the network stays visible.
+      const L = document.documentElement.dataset.theme === "light" ? 42 : 70;
       const max = 150;
       for (let i = 0; i < nodes.length; i++) {
         const a = nodes[i];
@@ -58,7 +60,7 @@ export default function HeroCanvas() {
           const b = nodes[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < max) {
-            g.strokeStyle = `hsla(${(a.hue + b.hue) / 2}, 85%, 68%, ${(1 - d / max) * 0.28})`;
+            g.strokeStyle = `hsla(${(a.hue + b.hue) / 2}, 85%, ${L}%, ${(1 - d / max) * 0.28})`;
             g.lineWidth = 1;
             g.beginPath();
             g.moveTo(a.x, a.y);
@@ -69,13 +71,13 @@ export default function HeroCanvas() {
         const dp = Math.hypot(a.x - pointer.x, a.y - pointer.y);
         const near = dp < 190 ? 1 - dp / 190 : 0;
         if (near > 0) {
-          g.strokeStyle = `hsla(189, 95%, 65%, ${near * 0.5})`;
+          g.strokeStyle = `hsla(189, 95%, ${L - 5}%, ${near * 0.5})`;
           g.beginPath();
           g.moveTo(a.x, a.y);
           g.lineTo(pointer.x, pointer.y);
           g.stroke();
         }
-        g.fillStyle = `hsla(${a.hue}, 90%, 72%, ${0.55 + near * 0.45})`;
+        g.fillStyle = `hsla(${a.hue}, 90%, ${L + 2}%, ${0.55 + near * 0.45})`;
         g.beginPath();
         g.arc(a.x, a.y, a.r + near * 1.8, 0, Math.PI * 2);
         g.fill();

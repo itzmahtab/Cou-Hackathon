@@ -35,7 +35,7 @@ export default async function Dashboard() {
               {s.trend.map((t) => (
                 <li key={t.day} className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-3 text-sm">
                   <span className="font-mono text-muted">{t.day}</span>
-                  <span className="h-2.5 rounded-full bg-white/[0.06]">
+                  <span className="h-2.5 rounded-full bg-fg/[0.06]">
                     <span className="block h-full rounded-full bg-primary" style={{ width: `${(t.n / maxTrend) * 100}%` }} />
                   </span>
                   <span className="text-right font-mono">{t.n}</span>
@@ -54,7 +54,7 @@ export default async function Dashboard() {
                   <span className="truncate" title={u.university}>
                     {u.university}
                   </span>
-                  <span className="h-2.5 rounded-full bg-white/[0.06]">
+                  <span className="h-2.5 rounded-full bg-fg/[0.06]">
                     <span className="block h-full rounded-full bg-secondary" style={{ width: `${(u.n / maxUni) * 100}%` }} />
                   </span>
                   <span className="text-right font-mono">{u.n}</span>

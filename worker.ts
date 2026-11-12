@@ -5,7 +5,15 @@
 import handler from "./.open-next/worker.js";
 
 const worker = {
-  fetch: handler.fetch,
+  fetch(request: Request, env: unknown, ctx: unknown) {
+    // One canonical address: www.coutechnova.xyz -> coutechnova.xyz.
+    const url = new URL(request.url);
+    if (url.hostname === "www.coutechnova.xyz") {
+      url.hostname = "coutechnova.xyz";
+      return Response.redirect(url.toString(), 301);
+    }
+    return handler.fetch(request, env, ctx);
+  },
   async scheduled(_event: unknown, env: Record<string, unknown>, ctx: { waitUntil(p: Promise<unknown>): void }) {
     const req = new Request("https://internal.invalid/api/v1/cron", {
       method: "POST",

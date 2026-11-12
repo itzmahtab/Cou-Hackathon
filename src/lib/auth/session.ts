@@ -4,7 +4,7 @@ import { adminActivityLogs, admins, adminSessions, type Admin } from "../db/sche
 import { AppError } from "../http";
 import { randomToken, sha256Hex, uuid } from "../ids";
 import { can, type Permission } from "./permissions";
-import { DUMMY_HASH, verifyPassword } from "./password";
+import { DUMMY_HASH, hashPassword, needsRehash, verifyPassword } from "./password";
 
 export const IDLE_MS = 2 * 60 * 60 * 1000;
 export const ABSOLUTE_MS = 12 * 60 * 60 * 1000;
@@ -42,11 +42,19 @@ export function activityRow(
 export async function login(ctx: Ctx, emailRaw: string, password: string, ip: string, userAgent: string | null): Promise<{ token: string; admin: Admin }> {
   const email = emailRaw.trim().toLowerCase();
   const admin = (await ctx.db.select().from(admins).where(eq(admins.email, email)).limit(1))[0];
-  const valid = verifyPassword(password, admin?.passwordHash ?? DUMMY_HASH);
+  const valid = await verifyPassword(password, admin?.passwordHash ?? DUMMY_HASH);
   if (!admin || !valid || !admin.isActive) {
     await logActivity(ctx, { adminId: admin?.id ?? null, action: "auth.login_failed", detail: { email }, ip });
     throw new AppError(401, "UNAUTHENTICATED", "Incorrect email or password.");
   }
+  // Move older hashes (Argon2id) to the current scheme now that we know the password.
+  const upgrade = needsRehash(admin.passwordHash) ? await hashPassword(password) : null;
+  const token = await createSession(ctx, admin, ip, userAgent, upgrade);
+  return { token, admin };
+}
+
+/** Opens a session for an admin whose identity has already been checked. */
+export async function createSession(ctx: Ctx, admin: Admin, ip: string, userAgent: string | null, newPasswordHash: string | null = null): Promise<string> {
   const token = randomToken(32);
   const now = ctx.now();
   await ctx.db.batch([
@@ -59,10 +67,10 @@ export async function login(ctx: Ctx, emailRaw: string, password: string, ip: st
       expiresAt: now + ABSOLUTE_MS,
       createdAt: now,
     }),
-    ctx.db.update(admins).set({ lastLoginAt: now }).where(eq(admins.id, admin.id)),
+    ctx.db.update(admins).set({ lastLoginAt: now, ...(newPasswordHash ? { passwordHash: newPasswordHash } : {}) }).where(eq(admins.id, admin.id)),
     ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "auth.login", ip })),
   ]);
-  return { token, admin };
+  return token;
 }
 
 export async function adminFromToken(ctx: Ctx, token: string | undefined | null): Promise<Admin | null> {

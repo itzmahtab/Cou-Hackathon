@@ -9,6 +9,7 @@ import { ADMIN_ROLES } from "@/lib/constants";
 import { adminActivityLogs, admins, adminSessions, files } from "@/lib/db/schema";
 import { AppError } from "@/lib/http";
 import { uuid } from "@/lib/ids";
+import { runAfter } from "@/lib/ctx";
 import { requireAdmin, runAction, type ActionResult } from "@/lib/server";
 import { settingsSchema, settingsUpserts, type Settings } from "@/lib/settings";
 
@@ -81,7 +82,7 @@ export async function createAdminAction(_: ActionResult | null, fd: FormData): P
     const id = uuid();
     try {
       await ctx.db.batch([
-        ctx.db.insert(admins).values({ id, email: input.email, name: input.name, role: input.role, passwordHash: hashPassword(input.password), isActive: true, mustChangePassword: true, createdAt: now, updatedAt: now }),
+        ctx.db.insert(admins).values({ id, email: input.email, name: input.name, role: input.role, passwordHash: await hashPassword(input.password), isActive: true, mustChangePassword: true, createdAt: now, updatedAt: now }),
         ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "admin.create", entityType: "admin", entityId: id, detail: { email: input.email, role: input.role } })),
       ]);
     } catch (err) {
@@ -126,7 +127,7 @@ export async function resetAdminPasswordAction(_: ActionResult | null, fd: FormD
     const problem = passwordProblem(password);
     if (problem) throw new AppError(400, "VALIDATION_ERROR", problem);
     await ctx.db.batch([
-      ctx.db.update(admins).set({ passwordHash: hashPassword(password), mustChangePassword: true, updatedAt: ctx.now() }).where(eq(admins.id, id)),
+      ctx.db.update(admins).set({ passwordHash: await hashPassword(password), mustChangePassword: true, updatedAt: ctx.now() }).where(eq(admins.id, id)),
       ctx.db.delete(adminSessions).where(eq(adminSessions.adminId, id)),
       ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "admin.reset_password", entityType: "admin", entityId: id })),
     ]);
@@ -146,5 +147,28 @@ export async function purgeIdentityFilesAction(_: ActionResult | null, fd: FormD
     }
     await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "retention.purge_identity_files", detail: { files: rows.length } }));
     return { message: `Deleted ${rows.length} file(s).` };
+  });
+}
+
+/** Saves the Gmail App Password (encrypted), then sends whatever is waiting in the queue. */
+export async function saveSmtpPasswordAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("settings.manage");
+    const { saveSmtpPassword, clearSmtpPassword } = await import("@/features/email/config");
+    const { drainOutbox } = await import("@/features/email/outbox");
+    if (fd.get("clear") === "1") {
+      await clearSmtpPassword(ctx);
+      await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "settings.smtp_password_cleared" }));
+      revalidatePath("/admin", "layout");
+      return { message: "Email password removed." };
+    }
+    // Google shows app passwords in groups of four with spaces; the spaces are not part of it.
+    const password = String(fd.get("smtpPassword") ?? "").replace(/\s+/g, "");
+    if (password.length < 8 || password.length > 64) throw new AppError(400, "VALIDATION_ERROR", "Paste the 16-character Gmail App Password.", { smtpPassword: "16 characters expected." });
+    await saveSmtpPassword(ctx, password, admin.id);
+    await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "settings.smtp_password_saved" }));
+    runAfter(drainOutbox(ctx, 10));
+    revalidatePath("/admin", "layout");
+    return { message: "Saved. Queued emails are being sent now. Use Emails -> Send me a test email to confirm delivery." };
   });
 }

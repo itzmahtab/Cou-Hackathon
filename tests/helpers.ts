@@ -42,7 +42,7 @@ export const TEST_PASSWORD = "correct horse battery";
 let cachedHash: string | null = null;
 
 export async function makeAdmin(ctx: Ctx, role: AdminRole = "SUPER_ADMIN", email = `${role.toLowerCase()}-${uuid().slice(0, 6)}@hack.test`): Promise<Admin> {
-  cachedHash ??= hashPassword(TEST_PASSWORD);
+  cachedHash ??= await hashPassword(TEST_PASSWORD);
   const row = { id: uuid(), email, name: role, passwordHash: cachedHash, role, isActive: true, mustChangePassword: false, lastLoginAt: null, createdAt: ctx.now(), updatedAt: ctx.now() };
   await ctx.db.insert(admins).values(row);
   return row;

@@ -183,3 +183,37 @@ describe("rate limit", () => {
     t.setNow(T.phase1);
   });
 });
+
+describe("email password storage", () => {
+  test("the Gmail App Password is stored encrypted and only readable with the same secret", async () => {
+    const { saveSmtpPassword, emailEnv, smtpPasswordSource, clearSmtpPassword } = await import("@/features/email/config");
+    const { eventSettings } = await import("@/lib/db/schema");
+    const admin = await makeAdmin(t.ctx, "SUPER_ADMIN");
+    const smtp = { ...t.ctx, env: { ...t.ctx.env, EMAIL_PROVIDER: "smtp", SMTP_PASSWORD: undefined } };
+    expect(await smtpPasswordSource(smtp)).toBeNull();
+    await saveSmtpPassword(smtp, "abcdefghijklmnop", admin.id);
+    const raw = JSON.stringify(await t.ctx.db.select().from(eventSettings));
+    expect(raw).not.toContain("abcdefghijklmnop");
+    expect((await emailEnv(smtp)).SMTP_PASSWORD).toBe("abcdefghijklmnop");
+    expect(await smtpPasswordSource(smtp)).toBe("settings");
+    const otherSecret = { ...smtp, env: { ...smtp.env, SESSION_SECRET: "a-different-secret" } };
+    expect((await emailEnv(otherSecret)).SMTP_PASSWORD).toBeUndefined();
+    await clearSmtpPassword(smtp);
+    expect(await smtpPasswordSource(smtp)).toBeNull();
+  });
+
+  test("an Argon2id hash from before still signs in and is upgraded to PBKDF2", async () => {
+    const { argon2id } = await import("@noble/hashes/argon2.js");
+    const { admins } = await import("@/lib/db/schema");
+    const salt = new Uint8Array(16);
+    const b64 = (b: Uint8Array) => btoa(String.fromCharCode(...b)).replace(/=+$/, "");
+    const digest = argon2id(new TextEncoder().encode("legacy password 123"), salt, { m: 1024, t: 1, p: 1, dkLen: 32 });
+    const old = ["", "argon2id", "v=19", "m=1024,t=1,p=1", b64(salt), b64(digest)].join("$");
+    const admin = await makeAdmin(t.ctx, "REVIEWER", "legacy@hack.test");
+    await t.ctx.db.update(admins).set({ passwordHash: old }).where(eq(admins.id, admin.id));
+    await login(t.ctx, "legacy@hack.test", "legacy password 123", "1.1.1.1", null);
+    const after = (await t.ctx.db.select().from(admins).where(eq(admins.id, admin.id)))[0];
+    expect(after.passwordHash.startsWith("$pbkdf2-sha256$i=100000$")).toBe(true);
+    await login(t.ctx, "legacy@hack.test", "legacy password 123", "1.1.1.1", null);
+  });
+});

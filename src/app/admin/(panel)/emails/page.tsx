@@ -1,7 +1,8 @@
 import { and, desc, eq, like, sql, type SQL } from "drizzle-orm";
-import { drainNowAction, resendEmailAction } from "@/app/admin/actions/results";
+import { drainNowAction, resendEmailAction, testEmailAction } from "@/app/admin/actions/results";
 import { ActionForm } from "@/components/admin/action-form";
 import { AdminHeader, Empty, StatusBadge } from "@/components/admin/ui";
+import { smtpPasswordSource } from "@/features/email/config";
 import { TEMPLATE_LABELS, type TemplateName } from "@/features/email/templates";
 import { EMAIL_STATUSES } from "@/lib/constants";
 import { emailOutbox, teams } from "@/lib/db/schema";
@@ -29,13 +30,19 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
   ]);
   const count = Object.fromEntries(counts.map((c) => [c.status, c.n]));
   const provider = ctx.env.EMAIL_PROVIDER;
+  const smtpSource = await smtpPasswordSource(ctx);
 
   return (
     <>
       <AdminHeader
         title="Email delivery"
-        lead={`Provider: ${provider}${provider === "log" ? " (no provider configured: emails stay queued until EMAIL_PROVIDER and EMAIL_API_KEY are set)" : ""}. Queued ${count.QUEUED ?? 0} · sent ${count.SENT ?? 0} · gave up ${count.DEAD ?? 0}. Emails go out automatically every minute; failures retry up to five times.`}
-        actions={<ActionForm action={drainNowAction} submitLabel="Send queued now" submitClass="btn-secondary" />}
+        lead={`Provider: ${provider === "smtp" ? `Gmail SMTP via Nodemailer (${ctx.env.SMTP_USER ?? "no user set"})` : provider}${provider === "log" ? " (no provider configured: emails stay queued)" : ""}${provider === "smtp" && !smtpSource ? ". The Gmail App Password is not set (Admin → Settings → Email), so emails are waiting in the queue" : ""}. Queued ${count.QUEUED ?? 0} · sent ${count.SENT ?? 0} · gave up ${count.DEAD ?? 0}. Emails go out automatically every minute; failures retry up to five times.`}
+        actions={
+          <div className="grid gap-2">
+            <ActionForm action={testEmailAction} submitLabel="Send me a test email" submitClass="btn-secondary" />
+            <ActionForm action={drainNowAction} submitLabel="Send queued now" submitClass="btn-secondary" />
+          </div>
+        }
       />
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <input name="q" defaultValue={sp.q} placeholder="Recipient email" aria-label="Recipient" className="input min-w-56 flex-1" />
