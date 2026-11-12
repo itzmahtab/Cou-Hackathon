@@ -1,0 +1,9 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+APP_ENV=local
+APP_URL=http://localhost:3000
+SESSION_SECRET=local-development-secret-change-me-0000000000
+CRON_SECRET=local-cron-secret
+EMAIL_PROVIDER=log
+# Cloudflare's published Turnstile test keys (always pass). Leave both unset to skip the check locally.
+# TURNSTILE_SITE_KEY=1x00000000000000000000AA
+# TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
