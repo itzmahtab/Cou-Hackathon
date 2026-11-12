@@ -114,8 +114,8 @@ const square = `<!doctype html><html><head><meta charset="utf-8"><style>${css(10
   <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between">
     <div class="pill" style="font-size:30px;padding:16px 30px">Register now <span style="opacity:.9">→</span> coutechnova.xyz</div>
     <div style="text-align:right">
-      <p class="mono" style="font-size:12px;color:#a1a1aa">Helpline</p>
-      <p style="font-size:22px;font-weight:700;margin-top:4px">01875-445951</p>
+      <p class="mono" style="font-size:12px;color:#a1a1aa">Venue</p>
+      <p style="font-size:20px;font-weight:700;margin-top:4px">Comilla University</p>
     </div>
   </div>
   <div class="sp" style="margin-top:26px">
@@ -139,7 +139,7 @@ const wide = `<!doctype html><html><head><meta charset="utf-8"><style>${css(1920
     <h1 class="big" style="font-size:132px;line-height:.92;margin-top:36px">CoU<br><span class="grad">TECHNOVA</span><br>2026</h1>
     <p class="mono" style="font-size:30px;margin-top:26px;color:#e4e4e7">AI &amp; Technology Carnival</p>
     <div class="pill" style="font-size:36px;padding:20px 36px;margin-top:40px">Register now <span style="opacity:.9">→</span> coutechnova.xyz</div>
-    <p style="font-size:24px;color:#d4d4d8;margin-top:24px">Helpline <b style="color:#fff">01875-445951</b> · Comilla University, Bangladesh</p>
+    <p style="font-size:24px;color:#d4d4d8;margin-top:24px">Comilla University, Bangladesh</p>
     <div class="sp" style="justify-content:flex-start;margin-top:34px">
       <span class="lbl mono" style="font-size:14px">Title sponsor</span><img src="${AORUS}" style="height:48px;border-radius:10px">
       <span style="width:1px;height:40px;background:rgba(255,255,255,.18)"></span>
