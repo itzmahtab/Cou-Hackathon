@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TSHIRT_SIZES } from "@/lib/db/schema";
+import { TSHIRT_SIZES } from "@/lib/constants";
 
 export const collapse = (s: string) => s.normalize("NFC").replace(/\s+/g, " ").trim();
 export const normaliseKey = (s: string) => collapse(s).toLowerCase();

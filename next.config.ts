@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const csp = [
   "default-src 'self'",
   // Next.js emits inline bootstrap scripts; a nonce policy would force a proxy
   // layer, so inline is allowed and every other source is locked down.
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+  // React's development build needs eval for stack reconstruction; production never does.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com`,
   "frame-src https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
