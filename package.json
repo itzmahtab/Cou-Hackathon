@@ -13,7 +13,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply cou-hackathon --local",
     "db:migrate:remote": "wrangler d1 migrations apply cou-hackathon --remote",
-    "admin:create": "tsx scripts/create-admin.ts",
+    "admin:create": "tsx --tsconfig tsconfig.json scripts/create-admin.ts",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && wrangler dev",
     "cf:deploy": "opennextjs-cloudflare build && wrangler deploy"
