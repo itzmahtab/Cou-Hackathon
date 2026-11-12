@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -39,7 +40,7 @@ export function Header() {
       </a>
       <div className="container-page flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex shrink-0 items-center" aria-label="CoU AI Hackathon 2026, home">
-          <Image src="/event-logo-horizontal.png" alt="" width={1600} height={364} priority className="h-9 w-auto" />
+          <Image src="/event-logo-horizontal.png" alt="" width={1600} height={364} priority className="logo-adapt h-9 w-auto" />
         </Link>
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {NAV.map((item) => (
@@ -48,7 +49,8 @@ export function Header() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <ThemeToggle />
           <Link href="/status" className="btn btn-ghost btn-sm hidden sm:inline-flex">
             Check status
           </Link>
@@ -63,7 +65,7 @@ export function Header() {
       {open && (
         <nav id="mobile-nav" aria-label="Mobile" className="container-page grid gap-1 pb-5 lg:hidden">
           {[...NAV, { href: "/status", label: "Check status" }, { href: "/contact", label: "Contact" }].map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-lg px-3 py-3 text-base text-fg hover:bg-white/[0.06]">
+            <Link key={item.href} href={item.href} className="rounded-lg px-3 py-3 text-base text-fg hover:bg-fg/[0.06]">
               {item.label}
             </Link>
           ))}

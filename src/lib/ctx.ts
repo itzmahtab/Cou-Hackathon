@@ -18,6 +18,10 @@ export interface RuntimeEnv {
   EMAIL_REPLY_TO?: string;
   EMAIL_BATCH_SIZE?: string;
   ADMIN_NOTIFY_EMAIL?: string;
+  SMTP_HOST?: string;
+  SMTP_PORT?: string;
+  SMTP_USER?: string;
+  SMTP_PASSWORD?: string;
 }
 
 /** Everything a service needs. Tests build one by hand; the app builds it from the Worker bindings. */
@@ -53,6 +57,10 @@ export function makeCtx(bindings: { DB: D1Database; FILES: R2Bucket } & Partial<
       EMAIL_REPLY_TO: bindings.EMAIL_REPLY_TO,
       EMAIL_BATCH_SIZE: bindings.EMAIL_BATCH_SIZE,
       ADMIN_NOTIFY_EMAIL: bindings.ADMIN_NOTIFY_EMAIL,
+      SMTP_HOST: bindings.SMTP_HOST,
+      SMTP_PORT: bindings.SMTP_PORT,
+      SMTP_USER: bindings.SMTP_USER,
+      SMTP_PASSWORD: bindings.SMTP_PASSWORD,
     },
   };
 }

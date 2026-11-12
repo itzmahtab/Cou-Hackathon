@@ -49,7 +49,7 @@ ${l.paragraphs.map((p) => `<p style="margin:0 0 14px">${e(p)}</p>`).join("")}
 ${facts}${cta}
 ${l.footnote ? `<p style="margin:18px 0 0;color:#64748b;font-size:13px">${e(l.footnote)}</p>` : ""}
 </td></tr>
-<tr><td style="background:#f8fafc;padding:18px 28px;color:#64748b;font-size:12px;line-height:1.6">${EVENT} · 24 November 2026 · Comilla University, Bangladesh<br>Six Hours. One Vision. Infinite Possibilities.<br>You are receiving this because your team registered for the hackathon.</td></tr>
+<tr><td style="background:#f8fafc;padding:18px 28px;color:#64748b;font-size:12px;line-height:1.6">${EVENT} · 24 November 2026 · Comilla University, Bangladesh<br>Five Hours. One Vision. Infinite Possibilities.<br>You are receiving this because your team registered for the hackathon.</td></tr>
 </table></td></tr></table></body></html>`;
   const text = [
     EVENT,
@@ -199,7 +199,7 @@ export const TEMPLATES = {
       subject: `${EVENT}: final results are published`,
       heading: "The results are in.",
       greeting: `Hi ${s(p.name)},`,
-      paragraphs: [`Thank you for six hours of building. The final leaderboard for ${EVENT} is now public.`],
+      paragraphs: [`Thank you for five hours of building. The final leaderboard for ${EVENT} is now public.`],
       cta: { label: "See the leaderboard", url: s(p.leaderboardUrl) },
     }),
 

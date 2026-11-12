@@ -3,7 +3,7 @@
  * from settings so the pages stay correct when an admin changes them.
  */
 export const WHY = [
-  { title: "Ship something real", body: "Six hours is short enough to stay focused and long enough to build a working demo. You leave with a project, not a slide." },
+  { title: "Ship something real", body: "Five hours is short enough to stay focused and long enough to build a working demo. You leave with a project, not a slide." },
   { title: "Be judged on the idea first", body: "Phase 1 is free. Every team is scored on the strength of its idea before anyone pays anything." },
   { title: "Build with people from anywhere", body: "Teams can mix universities. Bring a friend from another campus, or come alone." },
   { title: "Compete for BDT 25,000", body: "Three prizes, one stage, and an audience of faculty, sponsors and fellow builders." },
@@ -42,7 +42,7 @@ export const RULES = [
   {
     title: "On the day",
     items: [
-      "The build lasts six hours. All core work must be done during the hackathon.",
+      "The build lasts five hours. All core work must be done during the hackathon.",
       "Your solution must make meaningful use of artificial intelligence.",
       "You may use open-source libraries, public datasets, pretrained models and AI coding assistants. Credit what you use.",
       "Bring your own laptop and chargers. Bring your student ID card for check-in.",
@@ -68,7 +68,7 @@ export const faq = (v: { fee: number; announcement: string }) => [
   { q: "When will I hear back?", a: `Selection results are emailed to every team member on ${v.announcement}. You can also check your status on this website.` },
   { q: "How do I pay if we are shortlisted?", a: "Send the team fee by bKash or Nagad Send Money to the number on the payment page, then submit the transaction ID through your status page. An organiser verifies it by hand and you receive a confirmation email." },
   { q: "Can I change my registration after submitting?", a: "No. Review everything on the last step before you submit. If something is seriously wrong, contact the organisers." },
-  { q: "Can we use AI tools and pretrained models?", a: "Yes. Open-source libraries, public datasets, pretrained models and coding assistants are allowed. The core work must be done during the six hours, and you should credit what you use." },
+  { q: "Can we use AI tools and pretrained models?", a: "Yes. Open-source libraries, public datasets, pretrained models and coding assistants are allowed. The core work must be done during the five hours, and you should credit what you use." },
   { q: "What should I bring?", a: "Your laptop, chargers and your student ID card." },
   { q: "I lost my registration ID. What now?", a: "It is in your confirmation email, along with a personal link to your status page. Search your inbox and spam folder for “CoU AI Hackathon”." },
 ];

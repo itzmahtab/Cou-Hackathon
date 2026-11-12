@@ -3,7 +3,7 @@ import type { Ctx } from "@/lib/ctx";
 import { emailOutbox } from "@/lib/db/schema";
 import { AppError } from "@/lib/http";
 import { hmacHex, safeEqual, uuid } from "@/lib/ids";
-import { getProvider } from "./providers";
+import { getProvider, type EmailProvider } from "./providers";
 import { renderEmail, type TemplateName } from "./templates";
 
 export const MAX_ATTEMPTS = 5;
@@ -81,6 +81,20 @@ export async function drainOutbox(ctx: Ctx, limit?: number): Promise<{ sent: num
 
   let sent = 0;
   let failed = 0;
+  // One provider (and, for SMTP, one connection) per batch. A configuration error is
+  // recorded on each row below rather than thrown, so it shows in Admin -> Emails.
+  if (due.length === 0) return { sent: 0, failed: 0 };
+  let provider: EmailProvider;
+  try {
+    provider = getProvider(ctx.env);
+  } catch (err) {
+    // Missing configuration is not a delivery failure: keep every row queued, with its
+    // retries intact, and show the reason in Admin -> Emails until it is fixed.
+    const message = `Not sent yet: ${String((err as Error)?.message ?? err)}`.slice(0, 500);
+    await ctx.db.update(emailOutbox).set({ lastError: message, updatedAt: ctx.now() }).where(and(eq(emailOutbox.status, "QUEUED"), lte(emailOutbox.nextAttemptAt, ctx.now())));
+    return { sent: 0, failed: 0 };
+  }
+  try {
   for (const row of due) {
     const now = ctx.now();
     const claimed = await ctx.db
@@ -93,7 +107,7 @@ export async function drainOutbox(ctx: Ctx, limit?: number): Promise<{ sent: num
     const attempts = row.attempts + 1;
     try {
       const email = renderEmail(row.template, JSON.parse(row.payloadJson));
-      const result = await getProvider(ctx.env).send(row.toEmail, email);
+      const result = await provider.send(row.toEmail, email);
       await ctx.db
         .update(emailOutbox)
         .set({ status: "SENT", sentAt: ctx.now(), providerMessageId: result.messageId, lastError: null, updatedAt: ctx.now() })
@@ -113,6 +127,9 @@ export async function drainOutbox(ctx: Ctx, limit?: number): Promise<{ sent: num
         })
         .where(eq(emailOutbox.id, row.id));
     }
+  }
+  } finally {
+    provider.close?.();
   }
   return { sent, failed };
 }

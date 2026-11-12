@@ -27,7 +27,8 @@ A committed `.dev.vars.example` lists every name with a dummy value.
 | `SESSION_SECRET` | Signs status cookies and personal status links | `openssl rand -base64 48` (set in production) |
 | `CRON_SECRET` | Lets the scheduled handler call the internal cron route | `openssl rand -base64 48` (set in production) |
 | `TURNSTILE_SECRET_KEY` | Server-side Turnstile verification | Cloudflare dashboard → Turnstile |
-| `EMAIL_API_KEY` | Email provider API key, send-only scope | Provider dashboard |
+| `SMTP_PASSWORD` | Gmail App Password for `SMTP_USER` (with `EMAIL_PROVIDER=smtp`) | Google account → App passwords |
+| `EMAIL_API_KEY` | API key when `EMAIL_PROVIDER` is `brevo` or `resend` | Provider dashboard |
 
 ## Plain variables
 
@@ -37,7 +38,8 @@ A committed `.dev.vars.example` lists every name with a dummy value.
 | `APP_ENV` | `production` | `local`, `preview` or `production` |
 | `TURNSTILE_SITE_KEY` | `0x4AAA…` | Turnstile widget key, read at request time and sent to the browser. If unset, Turnstile is skipped |
 | `NEXT_PUBLIC_SITE_URL` | `https://cou-hackathon.cou-hackathon.workers.dev` | Build-time canonical URL for metadata, sitemap and robots (`.env.production`) |
-| `EMAIL_PROVIDER` | `brevo` | `brevo`, `resend`, or `log` (local and tests; in production `log` keeps emails queued with an error) |
+| `EMAIL_PROVIDER` | `smtp` | `smtp` (Nodemailer, used in production with Gmail), `brevo`, `resend`, or `log` (local development) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` | `smtp.gmail.com`, `465`, `coutechnova2026@gmail.com` | SMTP server and login for `EMAIL_PROVIDER=smtp` |
 | `EMAIL_FROM` | `CoU AI Hackathon <no-reply@example.edu>` | Sender; the domain must be verified with the provider |
 | `EMAIL_REPLY_TO` | `hackathon@example.edu` | Replies go to the organisers |
 | `EMAIL_BATCH_SIZE` | `10` | Emails sent per cron run; sets the send rate |

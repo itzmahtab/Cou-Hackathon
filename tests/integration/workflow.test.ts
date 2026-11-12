@@ -249,18 +249,24 @@ describe("email outbox", () => {
     expect(a.sent + b.sent).toBe(sentLog.length);
 
     while ((await drainOutbox(t.ctx, 50)).sent > 0);
-    const failing = { ...t.ctx, env: { ...t.ctx.env, EMAIL_PROVIDER: "brevo", EMAIL_API_KEY: undefined } };
+    // A misconfigured provider leaves mail queued without spending retries.
+    const misconfigured = { ...t.ctx, env: { ...t.ctx.env, EMAIL_PROVIDER: "smtp", SMTP_PASSWORD: undefined } };
+    const failing = { ...t.ctx, env: { ...t.ctx.env, EMAIL_PROVIDER: "test-fail" } };
     const sentRow = (await t.ctx.db.select().from(emailOutbox).where(eq(emailOutbox.status, "SENT")))[0];
     const resentId = await resendEmail(t.ctx, sentRow.id, superAdmin.id);
     let row = (await t.ctx.db.select().from(emailOutbox).where(eq(emailOutbox.id, resentId)))[0];
     expect(row).toMatchObject({ status: "QUEUED", requestedBy: superAdmin.id, toEmail: sentRow.toEmail });
+    expect(await drainOutbox(misconfigured, 5)).toEqual({ sent: 0, failed: 0 });
+    row = (await t.ctx.db.select().from(emailOutbox).where(eq(emailOutbox.id, resentId)))[0];
+    expect(row).toMatchObject({ status: "QUEUED", attempts: 0 });
+    expect(row.lastError).toMatch(/SMTP_PASSWORD/);
 
     for (let attempt = 1; attempt <= 5; attempt++) {
       const res = await drainOutbox(failing, 5);
       expect(res).toEqual({ sent: 0, failed: 1 });
       row = (await t.ctx.db.select().from(emailOutbox).where(eq(emailOutbox.id, resentId)))[0];
       expect(row.attempts).toBe(attempt);
-      expect(row.lastError).toMatch(/EMAIL_API_KEY/);
+      expect(row.lastError).toMatch(/simulated provider outage/);
       if (attempt < 5) {
         expect(row.status).toBe("QUEUED");
         expect(await drainOutbox(failing, 5)).toEqual({ sent: 0, failed: 0 }); // not due yet

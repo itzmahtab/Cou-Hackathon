@@ -378,7 +378,7 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
           {(
             [
               ["problemStatement", "Problem statement", "What problem are you solving, and who has it?"],
-              ["proposedSolution", "Proposed solution", "What will you build in six hours?"],
+              ["proposedSolution", "Proposed solution", "What will you build in five hours?"],
               ["aiComponent", "AI component / technologies", "Which models, data and techniques will you use, and why?"],
               ["expectedImpact", "Expected impact", "Who benefits, and how would you measure it?"],
             ] as const

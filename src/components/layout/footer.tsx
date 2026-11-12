@@ -7,7 +7,7 @@ export function Footer({ contactEmail, contactPhone }: { contactEmail: string; c
     <footer className="border-t border-line bg-surface/40">
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Image src="/event-logo-horizontal.png" alt="CoU AI Hackathon 2026" width={1600} height={364} className="h-10 w-auto" />
+          <Image src="/event-logo-horizontal.png" alt="CoU AI Hackathon 2026" width={1600} height={364} className="logo-adapt h-10 w-auto" />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted">
             The flagship competition of {SITE.parent}, presented by the {SITE.organiser}. 24 November 2026.
           </p>

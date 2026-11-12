@@ -21,8 +21,13 @@
   "vars": {
     "APP_ENV": "production",
     "APP_URL": "https://cou-hackathon.cou-hackathon.workers.dev",
-    "EMAIL_PROVIDER": "log",
-    "EMAIL_FROM": "CoU AI Hackathon <no-reply@cou-hackathon.workers.dev>",
+    "EMAIL_PROVIDER": "smtp",
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "465",
+    "SMTP_USER": "coutechnova2026@gmail.com",
+    "EMAIL_FROM": "CoU AI Hackathon 2026 <coutechnova2026@gmail.com>",
+    "EMAIL_REPLY_TO": "coutechnova2026@gmail.com",
+    "ADMIN_NOTIFY_EMAIL": "coutechnova2026@gmail.com",
     "EMAIL_BATCH_SIZE": "10"
   }
 }

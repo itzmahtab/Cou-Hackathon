@@ -100,7 +100,7 @@ Rules:
 ## 7. Home page structure
 
 1. Header: Technova and hackathon lockup, navigation, Register button.
-2. Hero: eyebrow "CoU Technova 2026 · Faculty of Engineering", headline "BUILD THE FUTURE. IN SIX HOURS.", tagline, date and venue, Register and Explore buttons, countdown, neural canvas.
+2. Hero: eyebrow "CoU Technova 2026 · Faculty of Engineering", headline "BUILD THE FUTURE. IN FIVE HOURS.", tagline, date and venue, Register and Explore buttons, countdown, neural canvas.
 3. Sponsor strip: Gigabyte AORUS (title sponsor), IT Palace (powered by).
 4. Key numbers: 6 hours, BDT 25,000, top 30 teams, teams of 1–3.
 5. About and why participate.

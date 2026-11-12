@@ -42,6 +42,30 @@ html {
   scroll-padding-top: 5rem;
 }
 
+/* Light theme: same token names, light values. Tailwind utilities read these variables. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef0f7;
+  --color-line: rgb(15 23 42 / 0.12);
+  --color-primary: #7c3aed;
+  --color-primary-strong: #6d28d9;
+  --color-primary-soft: #6d28d9;
+  --color-secondary: #0e7490;
+  --color-fg: #0b1020;
+  --color-muted: #475569;
+  --color-success: #047857;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --color-gold: #a16207;
+  --color-silver: #64748b;
+  --color-bronze: #b45309;
+}
+
+/* Long unbroken input (pasted links, test strings) must wrap instead of widening its container. */
+.card, .table td, .notice { overflow-wrap: anywhere; }
+
 body {
   background: var(--color-bg);
   color: var(--color-fg);
@@ -85,9 +109,11 @@ html.lenis, html.lenis body { height: auto; }
     background-clip: text;
     color: transparent;
   }
+  :root[data-theme="light"] .text-gradient { background-image: linear-gradient(120deg, #7c3aed 0%, #4f46e5 45%, #0891b2 100%); }
 
   .card { @apply rounded-[20px] border border-line bg-surface/80 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]; }
-  .glass { @apply border border-line bg-white/[0.04] backdrop-blur-xl; }
+  :root[data-theme="light"] .card { box-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 8px 24px -12px rgb(15 23 42 / 0.12); }
+  .glass { @apply border border-line bg-fg/[0.04] backdrop-blur-xl; }
 
   /* Animated gradient border: shown on hover and keyboard focus, static when motion is reduced. */
   .glow-card { position: relative; isolation: isolate; }
@@ -111,8 +137,8 @@ html.lenis, html.lenis body { height: auto; }
   }
   .btn-sm { @apply min-h-9 rounded-lg px-3 text-sm; }
   .btn-primary { @apply bg-primary-strong text-white shadow-[0_0_0_1px_rgb(167_139_250/0.4),0_8px_30px_-8px_rgb(139_92_246/0.7)] hover:bg-[#6d28d9] hover:shadow-[0_0_0_1px_rgb(167_139_250/0.6),0_10px_40px_-6px_rgb(139_92_246/0.9)]; }
-  .btn-secondary { @apply border border-line bg-white/[0.04] text-fg hover:border-primary-soft/60 hover:bg-white/[0.08]; }
-  .btn-ghost { @apply text-muted hover:bg-white/[0.06] hover:text-fg; }
+  .btn-secondary { @apply border border-line bg-fg/[0.04] text-fg hover:border-primary-soft/60 hover:bg-fg/[0.08]; }
+  .btn-ghost { @apply text-muted hover:bg-fg/[0.06] hover:text-fg; }
   .btn-danger { @apply border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20; }
 
   .field-label { @apply mb-1.5 block text-sm font-medium text-fg; }
@@ -126,7 +152,7 @@ html.lenis, html.lenis body { height: auto; }
   select.input { @apply appearance-none bg-[length:16px] bg-[right_0.75rem_center] bg-no-repeat pr-10; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 
   .badge { @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap; }
-  .badge-neutral { @apply border-line bg-white/[0.05] text-muted; }
+  .badge-neutral { @apply border-line bg-fg/[0.05] text-muted; }
   .badge-info { @apply border-secondary/30 bg-secondary/10 text-secondary; }
   .badge-primary { @apply border-primary/40 bg-primary/15 text-primary-soft; }
   .badge-success { @apply border-success/30 bg-success/10 text-success; }
@@ -138,7 +164,7 @@ html.lenis, html.lenis body { height: auto; }
   .table th { @apply border-b border-line bg-surface px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted; }
   .table td { @apply border-b border-line/60 px-4 py-3 align-top; }
   .table tr:last-child td { @apply border-b-0; }
-  .table tbody tr { @apply transition-colors hover:bg-white/[0.025]; }
+  .table tbody tr { @apply transition-colors hover:bg-fg/[0.025]; }
 
   .notice { @apply rounded-xl border px-4 py-3 text-sm; }
   .notice-info { @apply border-secondary/30 bg-secondary/[0.08] text-fg; }
@@ -167,3 +193,7 @@ html.lenis, html.lenis body { height: auto; }
     scroll-behavior: auto !important;
   }
 }
+
+/* The logo artwork has white lettering for dark backgrounds; on the light theme it is
+   inverted and hue-rotated, which turns white to near-black and keeps the brand hues. */
+:root[data-theme="light"] .logo-adapt { filter: invert(1) hue-rotate(180deg) saturate(1.4); }
