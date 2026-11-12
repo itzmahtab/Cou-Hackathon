@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const parts = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return { days: Math.floor(s / 86400), hours: Math.floor((s % 86400) / 3600), minutes: Math.floor((s % 3600) / 60), seconds: s % 60 };
 };
 
+function subscribe(onTick: () => void) {
+  const id = setInterval(onTick, 1000);
+  return () => clearInterval(id);
+}
+
 /** Counts down to the hackathon. Renders a stable placeholder on the server to avoid a hydration mismatch. */
 export function Countdown({ target, label = "Hackathon starts in" }: { target: string; label?: string }) {
   const end = Date.parse(target);
-  const [now, setNow] = useState<number | null>(null);
-  useEffect(() => {
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  // null on the server and during hydration, so the markup matches; then ticks every second.
+  const now = useSyncExternalStore(subscribe, () => Math.floor(Date.now() / 1000) * 1000, () => null);
 
   const left = now === null ? null : end - now;
   const p = left === null ? null : parts(left);

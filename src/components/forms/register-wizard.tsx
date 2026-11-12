@@ -49,8 +49,8 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
   const [ready, setReady] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
 
-  const form = useForm<Values, unknown, RegistrationInput>({ resolver: zodResolver(registrationSchema), defaultValues: useMemo(defaults, []), mode: "onTouched" });
-  const { register, control, handleSubmit, trigger, setValue, getValues, setError, watch, reset, formState } = form;
+  const form = useForm<Values, unknown, RegistrationInput>({ resolver: zodResolver(registrationSchema), defaultValues: useMemo(defaults, []), mode: "onSubmit", reValidateMode: "onSubmit" });
+  const { register, control, handleSubmit, setValue, getValues, setError, clearErrors, watch, reset, formState } = form;
   const { errors } = formState;
   const people = useFieldArray({ control, name: "participants" });
   const size = watch("team.size");
@@ -85,6 +85,14 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
     return () => sub.unsubscribe();
   }, [ready, done, files, step, sameAsPhone, getValues, watch]);
 
+  // An error disappears as soon as the visitor edits that field; the step is re-checked on Continue.
+  useEffect(() => {
+    const sub = watch((_, { name }) => {
+      if (name) clearErrors(name);
+    });
+    return () => sub.unsubscribe();
+  }, [watch, clearErrors]);
+
   // Keep the participant list the same length as the chosen team size.
   useEffect(() => {
     if (!ready) return;
@@ -103,22 +111,43 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
     });
   };
 
-  const stepFields = (s: number): FieldPath<Values>[] => {
-    if (s === 0) return ["team.name", "team.size"];
-    if (s === 1) return ["participants"];
-    if (s === 2) return ["idea"];
-    return ["consents"];
+  const STEP_PREFIX = ["team.", "participants.", "idea.", "consents."];
+
+  /**
+   * Validates one step against the shared schema. This runs the same Zod rules
+   * the server uses, synchronously, so the result never depends on which
+   * fields the visitor happened to touch.
+   */
+  const validateStep = (s: number): boolean => {
+    const prefix = STEP_PREFIX[s];
+    const result = registrationSchema.safeParse(getValues());
+    const issues = result.success ? [] : result.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })).filter((i) => i.path.startsWith(prefix) || (s === 1 && i.path === "team.size"));
+    clearErrors(prefix.slice(0, -1) as FieldPath<Values>);
+    const seen = new Set<string>();
+    for (const issue of issues) {
+      if (seen.has(issue.path)) continue;
+      seen.add(issue.path);
+      setError(issue.path as FieldPath<Values>, { type: "validate", message: issue.message }, { shouldFocus: seen.size === 1 });
+    }
+    return issues.length === 0;
   };
 
-  const next = async () => {
-    if (step === 1) getValues("participants").forEach((p, i) => sameAsPhone[i] && setValue(`participants.${i}.whatsapp`, p.phone));
-    if (await trigger(stepFields(step), { shouldFocus: true })) goTo(step + 1);
+  const syncWhatsapp = () => getValues("participants").forEach((p, i) => (sameAsPhone[i] ?? true) && setValue(`participants.${i}.whatsapp`, p.phone));
+
+  const next = () => {
+    if (step === 1) syncWhatsapp();
+    if (validateStep(step)) goTo(step + 1);
     else setFormError("Some fields need attention before you continue.");
   };
 
   const setFile = (key: string, path: FieldPath<Values>, file: UploadedFile | null) => {
     setFiles((f) => ({ ...f, [key]: file }));
     setValue(path, (file?.fileId ?? "") as never, { shouldValidate: true, shouldDirty: true });
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    syncWhatsapp();
+    return submit(e);
   };
 
   const submit = handleSubmit(
@@ -201,7 +230,7 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
 
   const v = getValues();
   return (
-    <form onSubmit={submit} noValidate className="mx-auto max-w-3xl" aria-labelledby="wizard-heading">
+    <form onSubmit={onSubmit} noValidate className="mx-auto max-w-3xl" aria-labelledby="wizard-heading">
       <ol className="mb-8 flex items-center gap-2" aria-label="Registration progress">
         {STEPS.map((name, i) => (
           <li key={name} aria-current={i === step ? "step" : undefined} className="flex flex-1 items-center gap-2">
@@ -272,7 +301,7 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
                     <input className="input" type="email" inputMode="email" autoComplete="off" {...register(`participants.${i}.email`)} />
                   </Field>
                   <Field label="Phone number" required error={e?.phone?.message} hint="Bangladeshi mobile, e.g. 01712345678">
-                    <input className="input" type="tel" inputMode="tel" autoComplete="off" {...register(`participants.${i}.phone`)} />
+                    <input className="input" type="tel" inputMode="tel" autoComplete="off" {...register(`participants.${i}.phone`, { onChange: (ev) => (sameAsPhone[i] ?? true) && setValue(`participants.${i}.whatsapp`, ev.target.value) })} />
                   </Field>
                   <div className="sm:col-span-2">
                     <label className="flex items-center gap-2.5 text-sm">
@@ -280,7 +309,11 @@ export function RegisterWizard({ turnstileSiteKey, announcement, rulesHref = "/r
                         type="checkbox"
                         className="h-4 w-4 accent-[#8b5cf6]"
                         checked={sameAsPhone[i] ?? true}
-                        onChange={(ev) => setSameAsPhone((s) => s.map((x, j) => (j === i ? ev.target.checked : x)))}
+                        onChange={(ev) => {
+                          const on = ev.target.checked;
+                          setSameAsPhone((s) => s.map((x, j) => (j === i ? on : x)));
+                          setValue(`participants.${i}.whatsapp`, on ? getValues(`participants.${i}.phone`) : "");
+                        }}
                       />
                       WhatsApp number is the same as the phone number
                     </label>

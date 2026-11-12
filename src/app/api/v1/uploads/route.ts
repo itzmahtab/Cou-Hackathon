@@ -11,7 +11,7 @@ export const POST = handle(async (req) => {
   assertSameOrigin(req);
   const ctx = getCtx();
   const ip = clientIp(req);
-  await rateLimit(ctx, `upload:${ip}`, 30, 15 * 60);
+  await rateLimit(ctx, `upload:${ip}`, 60, 15 * 60);
 
   // Refuse oversized bodies before reading them.
   const declared = Number(req.headers.get("content-length") ?? 0);

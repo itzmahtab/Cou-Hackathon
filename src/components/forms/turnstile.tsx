@@ -14,7 +14,9 @@ const SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explic
 export function Turnstile({ siteKey, onToken }: { siteKey?: string; onToken: (token: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const cb = useRef(onToken);
-  cb.current = onToken;
+  useEffect(() => {
+    cb.current = onToken;
+  }, [onToken]);
 
   useEffect(() => {
     if (!siteKey || !ref.current) return;
