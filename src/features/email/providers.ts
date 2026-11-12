@@ -68,13 +68,27 @@ export function getProvider(env: RuntimeEnv): EmailProvider {
       // Workers provide node:net and node:tls through nodejs_compat, which Nodemailer uses.
       if (!env.SMTP_USER || !env.SMTP_PASSWORD) throw new Error("SMTP_USER or SMTP_PASSWORD is not set.");
       const port = Number(env.SMTP_PORT ?? 465);
+      const host = env.SMTP_HOST ?? "smtp.gmail.com";
       let transport: import("nodemailer").Transporter | null = null;
       const get = async () => {
         if (!transport) {
           const nodemailer = (await import("nodemailer")).default;
           transport = nodemailer.createTransport({
-            host: env.SMTP_HOST ?? "smtp.gmail.com",
+            host,
             port,
+            // Nodemailer normally resolves the host and dials the raw IP addresses (IPv6
+            // first). Cloudflare's socket layer refuses that ("cannot connect to the
+            // specified address"), so hand it a TLS socket opened by hostname instead and
+            // let the platform do the lookup.
+            getSocket: ((_opts: unknown, callback: (err: Error | null, socket?: false | { connection?: import("node:net").Socket; secured?: boolean }) => void) => {
+              import("node:tls")
+                .then((tls) => {
+                  if (port !== 465) return callback(null, false);
+                  const connection = tls.connect({ host, port, servername: host });
+                  callback(null, { connection, secured: true });
+                })
+                .catch((err: Error) => callback(err));
+            }) as never,
             secure: port === 465,
             auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
             // One connection reused for the whole batch, closed by close().
