@@ -1,10 +1,10 @@
-import { Award, CalendarDays, Cookie, Gift, GraduationCap, MapPin, Ticket, Users } from "lucide-react";
+import { Award, CalendarDays, Cookie, ExternalLink, Gift, GraduationCap, Mail, MapPin, MessageCircle, Phone, Ticket, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { HelplineGrid } from "@/components/sections/helpline";
 import { GlowCard, Reveal } from "@/components/ui/motion";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
+import { formatPhone } from "@/config/content";
 import { SHOWCASE } from "@/config/showcase";
 
 export const metadata: Metadata = {
@@ -106,12 +106,30 @@ export default function ShowcasePage() {
             <ol className="mt-6 list-decimal space-y-2 pl-5 leading-relaxed text-muted">
               <li>Form a team of up to {SHOWCASE.maxTeam} Comilla University students, or take part alone.</li>
               <li>Register between {SHOWCASE.registrationOpens} and {SHOWCASE.registrationCloses}.</li>
-              <li>Pay BDT {SHOWCASE.feeBdt} per participant (a team of four pays BDT {SHOWCASE.feeBdt * 4}).</li>
+              <li>
+                Pay BDT {SHOWCASE.feeBdt} per participant by <strong className="text-fg">bKash Send Money</strong> to <strong className="whitespace-nowrap font-mono text-fg">{formatPhone(SHOWCASE.bkash)}</strong> (a team of four pays BDT {SHOWCASE.feeBdt * 4}). Keep the transaction ID for the registration form.
+              </li>
               <li>Bring your project to {SHOWCASE.venue} on {SHOWCASE.eventDate}. Carry your student ID card.</li>
             </ol>
-            <p className="mt-6 text-sm text-muted">For registration and payment details, contact the helpline below.</p>
+            {SHOWCASE.registrationUrl ? (
+              <a href={SHOWCASE.registrationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary mt-7">
+                Register for the showcase <ExternalLink size={16} aria-hidden />
+              </a>
+            ) : (
+              <p className="notice notice-info mt-6">The registration form opens on {SHOWCASE.registrationOpens}. Until then, contact the organisers below.</p>
+            )}
           </Reveal>
           <Reveal delay={0.1}>
+            <div className="card mb-5 border-primary/40 p-7">
+              <p className="eyebrow text-muted">Showcase fee</p>
+              <p className="mt-2 font-mono text-4xl font-semibold">BDT {SHOWCASE.feeBdt}</p>
+              <p className="text-sm text-muted">per participant</p>
+              <dl className="mt-5 grid gap-1 text-sm">
+                <dt className="text-xs uppercase tracking-wider text-muted">bKash (Send Money)</dt>
+                <dd className="font-mono text-lg font-semibold">{formatPhone(SHOWCASE.bkash)}</dd>
+              </dl>
+              <p className="mt-4 text-xs text-muted">This number is for the Project Showcase only, not the AI Hackathon.</p>
+            </div>
             <div className="card p-7 text-center">
               <p className="eyebrow text-muted">Organised by</p>
               <p className="mt-2 font-semibold">{SHOWCASE.organiser}</p>
@@ -128,13 +146,35 @@ export default function ShowcasePage() {
         </div>
       </section>
 
-      <section id="helpline" className="section container-page">
+      <section id="contact" className="section container-page">
         <Reveal>
-          <SectionHeader eyebrow="Helpline" title="Questions about the showcase?" lead="Call or WhatsApp our volunteers." />
+          <SectionHeader eyebrow="Contact" title="Questions about the showcase?" lead="Call or WhatsApp the showcase organisers, or send an email." />
         </Reveal>
-        <div className="mt-10">
-          <HelplineGrid />
-        </div>
+        <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {SHOWCASE.contacts.map((c) => (
+            <li key={c.phone} className="card flex flex-col p-5">
+              <p className="font-semibold">
+                {c.name} <span className="font-normal text-muted">· {c.dept}</span>
+              </p>
+              <p className="mt-1 font-mono text-sm text-muted">{formatPhone(c.phone)}</p>
+              <div className="mt-4 flex gap-2">
+                <a href={`tel:${c.phone}`} className="btn btn-secondary btn-sm flex-1 px-2" aria-label={`Call ${c.name}`}>
+                  <Phone size={15} aria-hidden /> Call
+                </a>
+                <a href={`https://wa.me/${c.phone.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm flex-1 px-2" aria-label={`WhatsApp ${c.name}`}>
+                  <MessageCircle size={15} aria-hidden /> WhatsApp
+                </a>
+              </div>
+            </li>
+          ))}
+          <li className="card flex flex-col p-5">
+            <p className="font-semibold">Email</p>
+            <p className="mt-1 break-all text-sm text-muted">{SHOWCASE.email}</p>
+            <a href={`mailto:${SHOWCASE.email}?subject=Project%20Showcase%20Competition`} className="btn btn-secondary btn-sm mt-4">
+              <Mail size={15} aria-hidden /> Send email
+            </a>
+          </li>
+        </ul>
         <p className="mt-10 text-sm text-muted">
           Looking for the AI Hackathon (open to all universities)?{" "}
           <Link href="/" className="text-primary-soft underline underline-offset-4">
