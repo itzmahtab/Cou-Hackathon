@@ -80,7 +80,7 @@ export const faq = (v: { fee: number; announcement: string }) => [
 ];
 
 /** Official rule book (PDF on Google Drive). */
-export const RULEBOOK_URL = "https://drive.google.com/file/d/18jOb_YtET5U4La5vQ924Ajes-Z_f-B0p/view?usp=sharing";
+export const RULEBOOK_URL = "https://drive.google.com/file/d/1-eITLys9RNQT34XmxfsQEQfMpT9Aaajf/view?usp=sharing";
 
 /** Helpline for participant questions. Numbers in international format. */
 export const HELPLINE = [
