@@ -3,6 +3,8 @@
   "name": "cou-hackathon",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
+  "account_id": "30d63e455590ff80b226afa8e9e33218",
+  "workers_dev": true,
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
@@ -10,8 +12,7 @@
     {
       "binding": "DB",
       "database_name": "cou-hackathon",
-      // Replace with the id printed by `wrangler d1 create cou-hackathon`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "befa4b62-7719-41d1-ac9f-943cae15f9f0",
       "migrations_dir": "drizzle/migrations"
     }
   ],
@@ -19,9 +20,9 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "APP_ENV": "production",
-    "APP_URL": "https://example.com",
+    "APP_URL": "https://cou-hackathon.cou-hackathon.workers.dev",
     "EMAIL_PROVIDER": "log",
-    "EMAIL_FROM": "CoU AI Hackathon <no-reply@example.com>",
+    "EMAIL_FROM": "CoU AI Hackathon <no-reply@cou-hackathon.workers.dev>",
     "EMAIL_BATCH_SIZE": "10"
   }
 }
