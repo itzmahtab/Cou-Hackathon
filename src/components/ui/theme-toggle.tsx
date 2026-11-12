@@ -6,8 +6,8 @@ import { cn } from "@/lib/cn";
 
 export const THEME_KEY = "cou-theme";
 
-/** Runs before first paint (inlined in <head>) so the page never flashes the wrong theme. Dark is the default. */
-export const THEME_INIT = `(function(){try{var t=localStorage.getItem("${THEME_KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else document.documentElement.dataset.theme="dark"}catch(e){document.documentElement.dataset.theme="dark"}})()`;
+/** Runs before first paint (inlined in <head>) so the page never flashes the wrong theme. Light is the default. */
+export const THEME_INIT = `(function(){try{var t=localStorage.getItem("${THEME_KEY}");document.documentElement.dataset.theme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}})()`;
 
 function subscribe(cb: () => void) {
   const obs = new MutationObserver(cb);
@@ -16,7 +16,7 @@ function subscribe(cb: () => void) {
 }
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const theme = useSyncExternalStore(subscribe, () => document.documentElement.dataset.theme ?? "dark", () => "dark");
+  const theme = useSyncExternalStore(subscribe, () => document.documentElement.dataset.theme ?? "light", () => "light");
   const next = theme === "light" ? "dark" : "light";
   return (
     <button

@@ -69,12 +69,13 @@ export async function testEmailAction(): Promise<ActionResult> {
   return runAction(async () => {
     const { ctx, admin } = await requireAdmin("emails.manage");
     const { getProvider } = await import("@/features/email/providers");
+    const { emailEnv } = await import("@/features/email/config");
     const { renderEmail } = await import("@/features/email/templates");
     let provider;
     try {
-      provider = getProvider(ctx.env);
+      provider = getProvider(await emailEnv(ctx));
     } catch (err) {
-      throw new Error(`Email is not configured: ${(err as Error).message}`);
+      throw new AppError(400, "EMAIL_NOT_CONFIGURED", `Email is not configured: ${(err as Error).message}`);
     }
     try {
       await provider.verify?.();

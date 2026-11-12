@@ -4,7 +4,7 @@
  *   pnpm admin:create -- --local     # local development database
  *   pnpm admin:create -- --remote    # production D1 (needs CLOUDFLARE_API_TOKEN)
  *
- * The password is read without echo, hashed here with Argon2id, and only the
+ * The password is read without echo, hashed here with PBKDF2-SHA256, and only the
  * hash is sent to the database.
  */
 import { execFileSync } from "node:child_process";
@@ -43,7 +43,7 @@ async function main() {
   if ((await ask("Repeat password: ", true)) !== password) throw new Error("Passwords do not match.");
 
   const now = Date.now();
-  const statement = `INSERT INTO admins (id, email, name, password_hash, role, is_active, must_change_password, created_at, updated_at) VALUES (${sql(crypto.randomUUID())}, ${sql(email)}, ${sql(name || email)}, ${sql(hashPassword(password))}, ${sql(roleAnswer)}, 1, 0, ${now}, ${now});`;
+  const statement = `INSERT INTO admins (id, email, name, password_hash, role, is_active, must_change_password, created_at, updated_at) VALUES (${sql(crypto.randomUUID())}, ${sql(email)}, ${sql(name || email)}, ${sql(await hashPassword(password))}, ${sql(roleAnswer)}, 1, 0, ${now}, ${now});`;
   execFileSync("pnpm", ["exec", "wrangler", "d1", "execute", "cou-hackathon", target, "--command", statement], { stdio: ["ignore", "inherit", "inherit"] });
   console.log(`\nCreated ${roleAnswer} ${email} in the ${target.slice(2)} database. Sign in at /admin/login.`);
 }

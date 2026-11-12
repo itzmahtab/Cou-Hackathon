@@ -3,4 +3,4 @@ import { hashPassword } from "../src/lib/auth/password";
 
 let input = "";
 process.stdin.on("data", (c) => (input += c));
-process.stdin.on("end", () => process.stdout.write(hashPassword(input.trim())));
+process.stdin.on("end", async () => process.stdout.write(await hashPassword(input.trim())));

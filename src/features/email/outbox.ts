@@ -3,6 +3,7 @@ import type { Ctx } from "@/lib/ctx";
 import { emailOutbox } from "@/lib/db/schema";
 import { AppError } from "@/lib/http";
 import { hmacHex, safeEqual, uuid } from "@/lib/ids";
+import { emailEnv } from "./config";
 import { getProvider, type EmailProvider } from "./providers";
 import { renderEmail, type TemplateName } from "./templates";
 
@@ -86,7 +87,7 @@ export async function drainOutbox(ctx: Ctx, limit?: number): Promise<{ sent: num
   if (due.length === 0) return { sent: 0, failed: 0 };
   let provider: EmailProvider;
   try {
-    provider = getProvider(ctx.env);
+    provider = getProvider(await emailEnv(ctx));
   } catch (err) {
     // Missing configuration is not a delivery failure: keep every row queued, with its
     // retries intact, and show the reason in Admin -> Emails until it is fixed.
