@@ -90,6 +90,25 @@ html {
 /* Text that crosses the bright arc gets full-strength colour and a soft shadow. */
 :root:not([data-theme="light"]) .on-aura { color: rgb(248 250 252 / 0.92); text-shadow: 0 1px 14px rgb(16 14 11 / 0.85), 0 0 2px rgb(16 14 11 / 0.6); }
 
+/* Main navigation: a gradient underline that grows from the centre on hover or keyboard
+   focus, and stays on the current page. */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.2rem;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #8b5cf6, #6366f1 50%, #22d3ee);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-link:hover::after, .nav-link:focus-visible::after, .nav-link[aria-current="page"]::after { transform: scaleX(1); }
+:root[data-theme="light"] .nav-link::after { background: linear-gradient(90deg, #7c3aed, #4f46e5 50%, #0891b2); }
+
 /* Long unbroken input (pasted links, test strings) must wrap instead of widening its container. */
 .card, .table td, .notice { overflow-wrap: anywhere; }
 

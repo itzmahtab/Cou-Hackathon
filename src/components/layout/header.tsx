@@ -63,7 +63,7 @@ export function Header() {
         </Link>
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {NAV.map((item) => (
-            <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} className={cn("rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-fg", pathname === item.href && "text-fg")}>
+            <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} className={cn("nav-link rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:text-fg", pathname === item.href && "text-fg")}>
               {item.label}
             </Link>
           ))}
