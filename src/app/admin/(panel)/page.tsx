@@ -3,6 +3,7 @@ import { AdminHeader, Section, Stat } from "@/components/admin/ui";
 import { dashboardStats } from "@/features/admin/queries";
 import { getPhases } from "@/features/event/queries";
 import { finalisedAt } from "@/features/shortlist/service";
+import { showcaseStats } from "@/features/showcase/service";
 import { getSettings } from "@/lib/settings";
 import { requireAdminPage } from "@/lib/server";
 import { formatDhaka } from "@/lib/time";
@@ -11,7 +12,7 @@ export const metadata = { title: "Dashboard" };
 
 export default async function Dashboard() {
   const { ctx, admin } = await requireAdminPage();
-  const [s, settings, finalised] = await Promise.all([dashboardStats(ctx), getSettings(ctx), finalisedAt(ctx)]);
+  const [s, settings, finalised, sc] = await Promise.all([dashboardStats(ctx), getSettings(ctx), finalisedAt(ctx), showcaseStats(ctx)]);
   const phases = getPhases(settings, ctx.now());
   const maxTrend = Math.max(1, ...s.trend.map((t) => t.n));
   const maxUni = Math.max(1, ...s.universities.map((u) => u.n));
@@ -25,6 +26,12 @@ export default async function Dashboard() {
         <Stat label="Participants" value={s.participants} />
         <Stat label="Shortlisted / confirmed" value={`${(s.byStatus.SHORTLISTED ?? 0) + (s.byStatus.CONFIRMED ?? 0)} / ${s.byStatus.CONFIRMED ?? 0}`} />
         <Stat label="Payments to verify" value={s.payments.PENDING_VERIFICATION ?? 0} hint={<Link href="/admin/payments" className="underline">Open payments</Link>} />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat label="Showcase teams" value={sc.teams} hint={`${sc.participants} participants`} />
+        <Stat label="Showcase to verify" value={sc.pending} hint={<Link href="/admin/showcase?status=PENDING_VERIFICATION" className="underline">Open showcase</Link>} />
+        <Stat label="Showcase confirmed" value={sc.confirmed} hint={`${sc.confirmedParticipants} participants`} />
+        <Stat label="Showcase fees verified" value={`৳${sc.feesConfirmed}`} />
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Section title="Registrations per day (Dhaka time)">

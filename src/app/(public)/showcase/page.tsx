@@ -1,4 +1,4 @@
-import { Award, CalendarDays, Cookie, ExternalLink, Gift, GraduationCap, Mail, MapPin, MessageCircle, Phone, Ticket, Users } from "lucide-react";
+import { Award, CalendarDays, Cookie, ArrowRight, Gift, GraduationCap, Mail, MapPin, MessageCircle, Phone, Ticket, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -42,6 +42,9 @@ export default function ShowcasePage() {
           </span>
           <span className="badge badge-neutral px-3 py-1 text-sm">Separate from the AI Hackathon</span>
         </div>
+        <Link href={SHOWCASE.registrationUrl} className="btn btn-primary mt-7">
+          Register for the showcase <ArrowRight size={16} aria-hidden />
+        </Link>
       </PageHeader>
 
       <section className="container-page py-14 md:py-20" aria-label="Key details">
@@ -112,9 +115,9 @@ export default function ShowcasePage() {
               <li>Bring your project to {SHOWCASE.venue} on {SHOWCASE.eventDate}. Carry your student ID card.</li>
             </ol>
             {SHOWCASE.registrationUrl ? (
-              <a href={SHOWCASE.registrationUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary mt-7">
-                Register for the showcase <ExternalLink size={16} aria-hidden />
-              </a>
+              <Link href={SHOWCASE.registrationUrl} className="btn btn-primary mt-7">
+                Register for the showcase <ArrowRight size={16} aria-hidden />
+              </Link>
             ) : (
               <p className="notice notice-info mt-6">The registration form opens on {SHOWCASE.registrationOpens}. Until then, contact the organisers below.</p>
             )}

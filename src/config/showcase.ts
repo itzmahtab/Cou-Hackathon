@@ -14,7 +14,7 @@ export const SHOWCASE = {
   /** bKash for the showcase fee only. The hackathon's payment numbers are set separately in Admin -> Settings. */
   bkash: "+8801752166856",
   /** Link to the registration form. Leave empty until it is ready; the page then points people to the contacts. */
-  registrationUrl: "",
+  registrationUrl: "/showcase/register",
   contacts: [
     { name: "Rifat", dept: "CSE", phone: "+8801581726138" },
     { name: "Mehedi", dept: "ICT", phone: "+8801752166856" },
