@@ -3,7 +3,7 @@
  * from settings so the pages stay correct when an admin changes them.
  */
 export const WHY = [
-  { title: "Ship something real", body: "Five hours is short enough to stay focused and long enough to build a working demo. You leave with a project, not a slide." },
+  { title: "Ship something real", body: "Three days to build after the shortlist, then a five-hour on-site final to finish and present. You leave with a project, not a slide." },
   { title: "Be judged on the idea first", body: "Phase 1 is free. Every team is scored on the strength of its idea before anyone pays anything." },
   { title: "Build with people from anywhere", body: "Teams can mix universities. Bring a friend from another campus, or come alone." },
   { title: "Compete for BDT 25,000", body: "Three prizes, one stage, and an audience of faculty, sponsors and fellow builders." },
@@ -31,22 +31,25 @@ export const RULES = [
     ],
   },
   {
-    title: "Phase 2: confirmation",
+    title: "Phase 2: pre-build and confirmation (21 – 23 November)",
     items: [
+      "Once the shortlist is published, selected teams may start building their project. 21 – 23 November is the pre-build period.",
+      "Project code may be written only from 21 November. Before that, only research, planning, design and dataset preparation are allowed.",
       "Shortlisted teams confirm their place by paying the team fee through bKash or Nagad Send Money and submitting the transaction ID on this website.",
       "The fee is per team, not per person.",
       "Payments are verified by hand by the organisers. A place is confirmed only when you receive the confirmation email.",
       "Only send money to the numbers shown on this website's payment page.",
+      "A team that has not paid by 23 November loses its seat, even if it has started building.",
     ],
   },
   {
-    title: "On the day",
+    title: "Final day (24 November)",
     items: [
-      "The build lasts five hours. All core work must be done during the hackathon.",
+      "The on-site final lasts five hours: finish the project you started in the pre-build, submit it and present it to the judges.",
       "Your solution must make meaningful use of artificial intelligence.",
       "You may use open-source libraries, public datasets, pretrained models and AI coding assistants. Credit what you use.",
       "Bring your own laptop and chargers. Bring your student ID card for check-in.",
-      "Projects must be your own work. Plagiarism or presenting a pre-built project leads to disqualification.",
+      "Projects must be your own work, started on or after 21 November. Reusing an earlier project, plagiarism or outside help leads to disqualification.",
     ],
   },
   {
@@ -66,9 +69,10 @@ export const faq = (v: { fee: number; announcement: string }) => [
   { q: "What do I need to register?", a: "For every member: name, email, phone and WhatsApp numbers, university, student ID, T-shirt size and a photo of the student ID card. For the team: an idea title, short written answers and one idea document in PDF or DOCX." },
   { q: "How are teams selected?", a: "Reviewers score each idea out of 100 on problem relevance, innovation, AI application, feasibility and potential impact. The top 30 are shortlisted." },
   { q: "When will I hear back?", a: `Selection results are emailed to every team member on ${v.announcement}. You can also check your status on this website.` },
+  { q: "When can we start building?", a: "From 21 November, once your team is on the published shortlist. 21 – 23 November is the pre-build period, and the five-hour on-site final on 24 November is for finishing, submitting and presenting. Before 21 November, only research, planning and design are allowed." },
   { q: "How do I pay if we are shortlisted?", a: "Send the team fee by bKash or Nagad Send Money to the number on the payment page, then submit the transaction ID through your status page. An organiser verifies it by hand and you receive a confirmation email." },
   { q: "Can I change my registration after submitting?", a: "No. Review everything on the last step before you submit. If something is seriously wrong, contact the organisers." },
-  { q: "Can we use AI tools and pretrained models?", a: "Yes. Open-source libraries, public datasets, pretrained models and coding assistants are allowed. The core work must be done during the five hours, and you should credit what you use." },
+  { q: "Can we use AI tools and pretrained models?", a: "Yes. Open-source libraries, public datasets, pretrained models and coding assistants are allowed. Project code may be written from 21 November (the pre-build period) until the end of the five-hour final, and you should credit what you use." },
   { q: "What should I bring?", a: "Your laptop, chargers and your student ID card." },
   { q: "Where are the full rules?", a: "The official rule book is a PDF linked on the Rules page and in the footer. If anything on this website and the rule book differ, ask the helpline." },
   { q: "Who can I call for help?", a: "Call or WhatsApp any number in the Helpline section on the home page or the Contact page." },

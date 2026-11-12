@@ -11,7 +11,7 @@ const CRITERIA = [
   ["Problem relevance", 20, "Is this a real problem, for real people, worth solving?"],
   ["Innovation", 25, "Is the approach new, or a clear improvement on what exists?"],
   ["AI application", 25, "Is AI essential to the solution and used soundly?"],
-  ["Feasibility", 15, "Can a working version be built in five hours?"],
+  ["Feasibility", 15, "Can a working version be built in the pre-build and the five-hour final?"],
   ["Potential impact", 15, "If it worked, how much would it matter?"],
 ] as const;
 

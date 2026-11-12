@@ -10,7 +10,7 @@ export default async function AboutPage() {
   const { settings, phases } = await getPublicEvent(getCtx());
   return (
     <>
-      <PageHeader eyebrow="About the hackathon" title={<>From imagination to <span className="text-gradient">innovation.</span></>} lead="CoU AI Hackathon 2026 is a five-hour, on-site AI competition at Comilla University, organised by the Faculty of Engineering as the flagship event of CoU Technova 2026." />
+      <PageHeader eyebrow="About the hackathon" title={<>From imagination to <span className="text-gradient">innovation.</span></>} lead="CoU AI Hackathon 2026 is an AI competition at Comilla University: shortlisted teams build during a three-day pre-build (21 – 23 November) and finish at a five-hour on-site final on 24 November, organised by the Faculty of Engineering as the flagship event of CoU Technova 2026." />
       <Stats settings={settings} />
       <About />
       <Timeline settings={settings} phases={phases} />
