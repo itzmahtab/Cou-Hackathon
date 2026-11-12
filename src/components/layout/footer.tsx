@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FOOTER_NAV, NAV, SITE } from "@/config/site";
+import { formatPhone, HELPLINE, RULEBOOK_URL } from "@/config/content";
 
 export function Footer({ contactEmail, contactPhone }: { contactEmail: string; contactPhone: string }) {
   return (
@@ -36,6 +37,14 @@ export function Footer({ contactEmail, contactPhone }: { contactEmail: string; c
               </li>
             ))}
           </ul>
+          <p className="mt-5 text-sm">
+            <a href={RULEBOOK_URL} target="_blank" rel="noopener noreferrer" className="block text-muted hover:text-fg">
+              Rule book (PDF)
+            </a>
+            <Link href="/contact#helpline" className="mt-2.5 block text-muted hover:text-fg">
+              Helpline: {formatPhone(HELPLINE[0].phone)}
+            </Link>
+          </p>
           {(contactEmail || contactPhone) && (
             <p className="mt-5 text-sm text-muted">
               {contactEmail && (

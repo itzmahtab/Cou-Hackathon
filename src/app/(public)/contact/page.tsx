@@ -1,5 +1,6 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
+import { HelplineGrid } from "@/components/sections/helpline";
 import { PageHeader } from "@/components/ui/page-header";
 import { getPublicEvent } from "@/features/event/queries";
 import { getCtx } from "@/lib/ctx";
@@ -17,6 +18,15 @@ export default async function ContactPage() {
     <>
       <PageHeader eyebrow="Contact" title="Talk to the organisers" lead="For questions about registration, payment or the event day. Include your registration ID if you have one." />
       <div className="container-page py-14 md:py-20">
+        <section aria-labelledby="helpline" className="mb-14">
+          <h2 id="helpline" className="h3">
+            Helpline
+          </h2>
+          <p className="mt-2 text-muted">Call or WhatsApp any of our volunteers.</p>
+          <div className="mt-6">
+            <HelplineGrid />
+          </div>
+        </section>
         <ul className="grid gap-4 md:grid-cols-3">
           {items.map((i) => (
             <li key={i.label} className="card p-6">

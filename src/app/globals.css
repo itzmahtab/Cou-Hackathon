@@ -133,7 +133,7 @@ html.lenis, html.lenis body { height: auto; }
   @keyframes glow-rotate { to { --angle: 360deg; } }
 
   .btn {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-semibold transition duration-200 select-none disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-semibold whitespace-nowrap [overflow-wrap:normal] transition duration-200 select-none disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-sm { @apply min-h-9 rounded-lg px-3 text-sm; }
   .btn-primary { @apply bg-primary-strong text-white shadow-[0_0_0_1px_rgb(167_139_250/0.4),0_8px_30px_-8px_rgb(139_92_246/0.7)] hover:bg-[#6d28d9] hover:shadow-[0_0_0_1px_rgb(167_139_250/0.6),0_10px_40px_-6px_rgb(139_92_246/0.9)]; }

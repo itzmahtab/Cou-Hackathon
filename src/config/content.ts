@@ -70,5 +70,24 @@ export const faq = (v: { fee: number; announcement: string }) => [
   { q: "Can I change my registration after submitting?", a: "No. Review everything on the last step before you submit. If something is seriously wrong, contact the organisers." },
   { q: "Can we use AI tools and pretrained models?", a: "Yes. Open-source libraries, public datasets, pretrained models and coding assistants are allowed. The core work must be done during the five hours, and you should credit what you use." },
   { q: "What should I bring?", a: "Your laptop, chargers and your student ID card." },
+  { q: "Where are the full rules?", a: "The official rule book is a PDF linked on the Rules page and in the footer. If anything on this website and the rule book differ, ask the helpline." },
+  { q: "Who can I call for help?", a: "Call or WhatsApp any number in the Helpline section on the home page or the Contact page." },
   { q: "I lost my registration ID. What now?", a: "It is in your confirmation email, along with a personal link to your status page. Search your inbox and spam folder for “CoU AI Hackathon”." },
 ];
+
+/** Official rule book (PDF on Google Drive). */
+export const RULEBOOK_URL = "https://drive.google.com/file/d/18jOb_YtET5U4La5vQ924Ajes-Z_f-B0p/view?usp=sharing";
+
+/** Helpline for participant questions. Numbers in international format. */
+export const HELPLINE = [
+  { name: "Mahtab Mahi", phone: "+8801875445951" },
+  { name: "Rafiq", phone: "+8801886845488" },
+  { name: "Rafi", phone: "+8801644237845" },
+  { name: "Emon", phone: "+8801867164146" },
+  { name: "Mehedi", phone: "+8801752166856" },
+  { name: "Tareq", phone: "+8801793165308" },
+  { name: "Rifat", phone: "+8801642532704" },
+];
+
+/** +8801875445951 -> +880 1875-445951 */
+export const formatPhone = (p: string) => p.replace(/^\+880(\d{4})(\d{6})$/, "+880 $1-$2");
