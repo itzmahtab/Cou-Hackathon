@@ -1,6 +1,6 @@
 # Environment Variables and Bindings
 
-Planned configuration for the Cloudflare build. The prototype's variables (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_INITIAL_PASSWORD`) are removed with it.
+Configuration for the Cloudflare build. The prototype's variables (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_INITIAL_PASSWORD`) are removed with it.
 
 Where values live:
 
@@ -18,14 +18,14 @@ A committed `.dev.vars.example` lists every name with a dummy value.
 | :--- | :--- | :--- |
 | `DB` | D1 database | All relational data |
 | `FILES` | R2 bucket (private) | Student IDs, idea documents, payment screenshots |
-| `BURST_LIMITER` | Rate Limiting | Short-window burst guard |
 | `ASSETS` | Static assets | Next.js static output (managed by OpenNext) |
 
 ## Secrets
 
 | Name | Purpose | How to generate |
 | :--- | :--- | :--- |
-| `SESSION_SECRET` | Derives CSRF tokens and signs status cookies | `openssl rand -base64 48` |
+| `SESSION_SECRET` | Signs status cookies and personal status links | `openssl rand -base64 48` (set in production) |
+| `CRON_SECRET` | Lets the scheduled handler call the internal cron route | `openssl rand -base64 48` (set in production) |
 | `TURNSTILE_SECRET_KEY` | Server-side Turnstile verification | Cloudflare dashboard → Turnstile |
 | `EMAIL_API_KEY` | Email provider API key, send-only scope | Provider dashboard |
 
@@ -35,8 +35,9 @@ A committed `.dev.vars.example` lists every name with a dummy value.
 | :--- | :--- | :--- |
 | `APP_URL` | `https://hackathon.example.edu` | Canonical origin: links in emails, `Origin` check, metadata |
 | `APP_ENV` | `production` | `local`, `preview` or `production` |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | `0x4AAA…` | Turnstile widget; the only security-related value exposed to the browser |
-| `EMAIL_PROVIDER` | `brevo` | `brevo`, `resend`, or `memory` (tests and local) |
+| `TURNSTILE_SITE_KEY` | `0x4AAA…` | Turnstile widget key, read at request time and sent to the browser. If unset, Turnstile is skipped |
+| `NEXT_PUBLIC_SITE_URL` | `https://cou-hackathon.cou-hackathon.workers.dev` | Build-time canonical URL for metadata, sitemap and robots (`.env.production`) |
+| `EMAIL_PROVIDER` | `brevo` | `brevo`, `resend`, or `log` (local and tests; in production `log` keeps emails queued with an error) |
 | `EMAIL_FROM` | `CoU AI Hackathon <no-reply@example.edu>` | Sender; the domain must be verified with the provider |
 | `EMAIL_REPLY_TO` | `hackathon@example.edu` | Replies go to the organisers |
 | `EMAIL_BATCH_SIZE` | `10` | Emails sent per cron run; sets the send rate |

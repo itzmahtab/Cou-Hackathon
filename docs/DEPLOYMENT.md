@@ -1,6 +1,23 @@
 # Deployment
 
-Target: one Cloudflare Worker built with `@opennextjs/cloudflare`, one D1 database, one private R2 bucket. This is the planned procedure; the commands and file names become real in Phase 2 and this document is corrected against what was actually run.
+One Cloudflare Worker built with `@opennextjs/cloudflare`, one D1 database and one private R2 bucket.
+
+## 0. Current production state (12 November 2026)
+
+| Item | State |
+| :--- | :--- |
+| Cloudflare account | `30d63e455590ff80b226afa8e9e33218` (in `wrangler.jsonc`) |
+| workers.dev subdomain | `cou-hackathon.workers.dev`, created |
+| D1 `cou-hackathon` | Created (`befa4b62-…`), migration `0000_init` applied |
+| R2 `cou-hackathon-files` | Created, private, no public domain |
+| Worker secrets | `SESSION_SECRET` and `CRON_SECRET` set |
+| Site URL | https://cou-hackathon.cou-hackathon.workers.dev |
+| Deploys | GitHub Actions `deploy.yml`, on every push to `main` and to `claude/awesome-knuth-v2adha`. Needs the `CLOUDFLARE_API_TOKEN` repository secret |
+| Email | Not configured: `EMAIL_PROVIDER=log`, so production emails stay queued until a provider is set (section 9) |
+| Turnstile | Not configured: the check is skipped (section 10) |
+| Workers plan | Free. Admin sign-in needs Workers Paid; see `ARCHITECTURE.md` section 11 |
+
+The deploy workflow only removes `claude/awesome-knuth-v2adha` from its trigger list once that branch is merged into `main`.
 
 ## 1. Environments
 
@@ -103,3 +120,30 @@ Migrations run before the deploy and must be backward compatible with the curren
 ## 8. After the event
 
 Run the retention purge at 30 and 90 days, export a final anonymised results snapshot, revoke the API tokens, and delete the preview resources.
+
+## 9. Email
+
+1. Create a Brevo (or Resend) account and add the sending domain. Publish the SPF, DKIM and DMARC records it gives you in Cloudflare DNS. A `workers.dev` address cannot be a verified sender, so this needs a domain you control.
+2. Create an API key with send permission only, then:
+   ```bash
+   pnpm wrangler secret put EMAIL_API_KEY
+   ```
+3. In `wrangler.jsonc`, set `EMAIL_PROVIDER` to `brevo` (or `resend`), `EMAIL_FROM` to an address on the verified domain, and optionally `EMAIL_REPLY_TO` and `ADMIN_NOTIFY_EMAIL`. Push to deploy.
+4. Everything queued before this is sent by the next cron run. Check Admin → Emails.
+
+## 10. Turnstile
+
+1. Cloudflare dashboard → Turnstile → Add widget. Hostname: the site's host. Mode: Managed.
+2. Put the site key in `wrangler.jsonc` `vars` as `TURNSTILE_SITE_KEY`, then:
+   ```bash
+   pnpm wrangler secret put TURNSTILE_SECRET_KEY
+   ```
+3. Push to deploy. Registration, uploads that follow it, status codes and admin sign-in then require the challenge.
+
+## 11. First admin
+
+After the first successful deploy, from a machine with the repository and a Cloudflare login (`pnpm wrangler login`):
+```bash
+pnpm admin:create -- --remote
+```
+It asks for the email, name, role and password (hidden), hashes the password locally and writes only the hash to D1. More admins can then be added in Admin → Settings.

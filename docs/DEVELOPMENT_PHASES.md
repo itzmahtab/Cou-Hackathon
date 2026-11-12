@@ -2,12 +2,22 @@
 
 ## Status
 
+Updated 12 November 2026. On instruction to build and deploy the full site, phases 2–8 were built in one pass rather than with an approval gate after each.
+
 | Phase | State |
 | :--- | :--- |
-| 1 Planning | **Complete, awaiting approval** (this document set) |
-| 2–10 | Not started |
+| 1 Planning | Done |
+| 2 Infrastructure | Done. D1 database and R2 bucket created, migration applied in production, CI and deploy workflows in place |
+| 3 Public website | Done |
+| 4 Registration | Done. Verified end to end in a browser (`tests/e2e/workflow-a.mjs`) |
+| 5 Admin | Done. Verified end to end in a browser (`tests/e2e/workflow-bcd.mjs`) |
+| 6 Payments | Done |
+| 7 Event day | Done. QR codes link to the check-in search; there is no in-browser camera scanner |
+| 8 Results | Done |
+| 9 Security and QA | Partly done: automated tests and lint pass. Not yet done: Lighthouse and axe audits, a load test, a screen-reader pass, real-device checks |
+| 10 Deployment | Blocked on the `CLOUDFLARE_API_TOKEN` GitHub secret and an email provider; see `DEPLOYMENT.md` |
 
-No application code has been written or changed in Phase 1.
+Not built: admin two-factor authentication, GSAP sequences (Motion covers the animations), an in-browser QR camera scanner, and a contact form (the contact page lists email and phone).
 
 ## The calendar problem
 

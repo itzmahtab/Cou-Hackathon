@@ -10,47 +10,81 @@ The hackathon management platform for **CoU AI Hackathon 2026**, the flagship co
 | Prize pool | BDT 25,000 (10,000 / 8,000 / 7,000) |
 | Phase 1 | 12–18 November: free team and idea registration (teams of 1–3) |
 | Phase 2 | 21–23 November: top 30 teams confirm with BDT 1,350 per team |
+| Production URL | https://cou-hackathon.cou-hackathon.workers.dev |
 
-## Current state
+## What is built
 
-**Planning is complete and awaiting approval. The platform described in `docs/` has not been built yet.**
+**Public site:** home, about, challenges, rules, registration, registration status, payment instructions, schedule, prizes, FAQ, contact, leaderboard, privacy, terms. Dark, animated design with Lenis smooth scrolling, a live countdown and a reduced-motion fallback for every effect.
 
-The code currently in `app/`, `components/`, `lib/` and `db/` is an earlier prototype built on PostgreSQL and Supabase with different event rules (3–4 members, a BDT 1,000 fee at registration, team logins, an online round). The plan replaces it; see `docs/ARCHITECTURE.md` section 2. The files `ADMIN_MANUAL.md`, `FACULTY_HANDOVER_MANUAL.md`, `HOSTING.md`, `LOCAL_SETUP.md` and `ASSUMPTIONS.md` describe that prototype, not the planned platform.
+**Registration:** a four-step wizard plus a confirmation screen. It covers team, participants, idea and review. Each student ID image and the idea document are uploaded and checked by content, not by name. Drafts survive a refresh, and a double submit creates one team. Every member gets a confirmation email with a personal status link.
 
-## Planned platform
+**Status and payment:** participants open their status through the emailed link or a one-time code. Shortlisted teams submit their bKash or Nagad Send Money details there, and an organiser verifies them by hand.
 
-- Public site: event information, schedule, prizes, rules, FAQ, leaderboard.
-- Two-phase registration: idea submission with documents, then manual bKash / Nagad payment verification for shortlisted teams.
-- Admin panel with five roles: registrations, idea scoring, top-30 shortlist, payments, check-in, results, email log, activity log.
-- Transactional email with retries and duplicate-send prevention.
+**Admin panel** (`/admin`) has five roles:
+- Dashboard.
+- Registrations, with search, filters, ID-card viewing, participant correction and CSV export.
+- Idea scoring and side-by-side comparison.
+- Top-30 shortlist, with an audited override and one-shot finalisation that emails everyone.
+- Payment verification.
+- Approved participants.
+- Event-day check-in, schedule and announcements.
+- Final results, with preview, publish and unpublish.
+- Email delivery log with resend.
+- Activity log.
+- Settings, admin accounts and the data-retention purge.
 
-Stack: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Motion, Lenis, Drizzle ORM, Cloudflare Workers (OpenNext), D1, R2, Turnstile.
+**Platform:** Next.js 16 on Cloudflare Workers (OpenNext), D1 through Drizzle, a private R2 bucket, Argon2id passwords with database sessions, D1-backed rate limits, optional Turnstile, and an email outbox with retries drained every minute by a cron trigger.
 
-## Documents
+## Before the event goes live
 
-| Document | Contents |
-| :--- | :--- |
-| [PRD](docs/PRD.md) | Requirements, scope, and the defaults chosen where the brief was ambiguous |
-| [Architecture](docs/ARCHITECTURE.md) | System design, Cloudflare limits and workarounds, costs, folder structure |
-| [App flow](docs/APP_FLOW.md) | Status lifecycle and the four main workflows |
-| [Database schema](docs/DATABASE_SCHEMA.md) | Tables, constraints, atomic operations, retention |
-| [API](docs/API_DOCUMENTATION.md) | Endpoint contracts and the role–permission matrix |
-| [Security](docs/SECURITY.md) | Controls, and the gaps accepted for this release |
-| [Design system](docs/DESIGN_SYSTEM.md) | Tokens, type, components, motion, accessibility |
-| [Development phases](docs/DEVELOPMENT_PHASES.md) | Build order against the event calendar, and what is needed from the organisers |
-| [Deployment](docs/DEPLOYMENT.md) | Cloudflare setup, CI/CD, operations |
-| [Testing](docs/TESTING.md) | Unit, integration, end-to-end and security test plan |
-| [Environment variables](docs/ENVIRONMENT_VARIABLES.md) | Bindings, secrets and configuration |
+| Item | Status | Where |
+| :--- | :--- | :--- |
+| `CLOUDFLARE_API_TOKEN` GitHub secret | Needed for automatic deploys | Repository → Settings → Secrets → Actions |
+| First super admin | Create once deployed | `pnpm admin:create -- --remote` |
+| Email provider | Not configured: emails queue until it is | `docs/DEPLOYMENT.md` § Email |
+| Turnstile | Optional but recommended | `docs/DEPLOYMENT.md` § Turnstile |
+| bKash and Nagad numbers, contacts, organisers | Enter in Admin → Settings | |
 
-## Running the existing prototype
-
-Until Phase 2 replaces it, the repository still runs as before; see `LOCAL_SETUP.md`.
+## Development
 
 ```bash
 pnpm install
+```
+```bash
+cp .dev.vars.example .dev.vars
+```
+```bash
+pnpm db:migrate:local
+```
+```bash
+pnpm admin:create -- --local
 ```
 ```bash
 pnpm dev
 ```
 
 Read `AGENTS.md` before changing code: this Next.js version differs from older releases, and its bundled documentation under `node_modules/next/dist/docs/` is the reference.
+
+## Tests
+
+```bash
+pnpm typecheck && pnpm lint && pnpm test
+```
+
+`pnpm test` runs 66 unit and integration tests against a real local D1 and R2. The browser workflows in `tests/e2e/` are described in `docs/TESTING.md`.
+
+## Documents
+
+| Document | Contents |
+| :--- | :--- |
+| [PRD](docs/PRD.md) | Requirements, scope, and the defaults chosen where the brief was ambiguous |
+| [Architecture](docs/ARCHITECTURE.md) | System design, Cloudflare limits and workarounds, costs |
+| [App flow](docs/APP_FLOW.md) | Status lifecycle and the main workflows |
+| [Database schema](docs/DATABASE_SCHEMA.md) | Tables, constraints, atomic operations, retention |
+| [API](docs/API_DOCUMENTATION.md) | Endpoint contracts and the role–permission matrix |
+| [Security](docs/SECURITY.md) | Controls, and the gaps accepted for this release |
+| [Design system](docs/DESIGN_SYSTEM.md) | Tokens, type, components, motion, accessibility |
+| [Development phases](docs/DEVELOPMENT_PHASES.md) | What was built, and what remains |
+| [Deployment](docs/DEPLOYMENT.md) | Cloudflare setup, CI/CD, operations |
+| [Testing](docs/TESTING.md) | What is tested and how to run it |
+| [Environment variables](docs/ENVIRONMENT_VARIABLES.md) | Bindings, secrets and configuration |

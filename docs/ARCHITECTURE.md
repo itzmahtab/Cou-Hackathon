@@ -1,6 +1,6 @@
 # Architecture
 
-Status: Phase 1 design. Items marked **Verify in Phase 2** are assumptions I have not yet proven on this codebase.
+Status: implemented. Results of the Phase 2 checks are in section 11.
 
 ## 1. Overview
 
@@ -62,11 +62,11 @@ These are the points where a Worker is not a Node.js server.
 | No persistent process, no shared memory between requests | In-memory rate limits, caches and job timers do not work | Rate-limit counters and the email outbox live in D1; periodic work runs from a Cron Trigger. |
 | D1 has no interactive transactions | `BEGIN … COMMIT` across awaits is unavailable | Multi-row writes use `db.batch([...])`, which D1 applies atomically. Invariants (unique email, unique transaction ID, one verified payment per team) are enforced by unique indexes, so a race loses at the database, not in application code. |
 | D1 is single-writer SQLite | Fine at this scale (hundreds of teams) | Indexed queries, pagination. |
-| Free plan: 10 ms CPU per request and a 3 MiB compressed Worker | Password hashing and a full Next.js server bundle may not fit | **Verify in Phase 2.** Measured on the first deploy. If either limit is exceeded, the Workers Paid plan (USD 5 per month) is required. I expect it will be. |
+| Free plan: 10 ms CPU per request and a 3 MiB compressed Worker | Password hashing and a full Next.js server bundle may not fit | Measured: the bundle fits, Argon2id does not. See section 11. |
 | Raw TCP SMTP is not a natural fit | NodeMailer's SMTP transport depends on Node socket behaviour that Workers only partly emulate | Email goes out over HTTPS to a provider API. NodeMailer is not used. |
 | R2 presigned URLs need S3 API credentials, and a presigned `PUT` cannot inspect content | The "browser uploads straight to R2" flow cannot verify magic bytes before the object exists | Section 5. |
 | Rate Limiting binding supports only 10 s or 60 s periods | "5 per 15 minutes" cannot be expressed | Binding for bursts; D1 fixed-window counters for the long windows. |
-| `proxy.ts` (Next.js 16's renamed middleware) and `cacheComponents` on OpenNext | Support may be incomplete | **Verify in Phase 2.** The design does not depend on either: authorisation is checked in the admin layout and in every route handler, never only at the edge. |
+| `proxy.ts` (Next.js 16's renamed middleware) and `cacheComponents` on OpenNext | Support may be incomplete | Neither is used. Authorisation runs in the admin layout, pages and every route handler. |
 | `next/image` optimisation | Needs Cloudflare Images (limited free quota) | Brand images are pre-sized static assets; no runtime optimiser. |
 
 ## 5. File uploads
@@ -173,3 +173,14 @@ open-next.config.ts
 ```
 
 Business rules live in `features/*/service.ts` and take a database handle as an argument, so they are tested without HTTP.
+
+## 11. What the Phase 2 checks found
+
+| Question | Result |
+| :--- | :--- |
+| Does this Next.js version build and run on Workers? | Yes. `opennextjs-cloudflare build` succeeds and the built Worker serves pages and reads D1 and R2 under `wrangler dev`. |
+| Bundle size | 4.5 MiB uncompressed, about 0.95 MiB gzip, so it fits the free plan's 3 MiB compressed limit. |
+| Argon2id cost | About 300 ms per hash in local workerd with the OWASP parameters (19 MiB, t=2). That is well over the free plan's 10 ms CPU budget, so **sign-in needs the Workers Paid plan (USD 5 per month)**. The fallback is lowering the cost parameters, which weakens the hashes. Every other route is cheap. |
+| `cacheComponents` and `proxy.ts` | Not used. Public pages render per request (`force-dynamic`) because they show live settings, and authorisation runs in layouts, pages and handlers. |
+| Uploads | Built as proposed in section 5: through the Worker to the R2 binding. |
+| Deploying from a Claude Code cloud session | Not possible. The session proxy replaces the `Authorization` header on every request to `api.cloudflare.com`, which breaks the static-asset upload step (it uses its own short-lived token). Deploys run from GitHub Actions instead. |
