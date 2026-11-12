@@ -18,6 +18,7 @@ export const NAV = [
   { href: "/rules", label: "Rules" },
   { href: "/faq", label: "FAQ" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/showcase", label: "Showcase" },
 ];
 
 export const FOOTER_NAV = [

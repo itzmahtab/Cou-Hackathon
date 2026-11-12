@@ -211,6 +211,48 @@ export function Timeline({ settings, phases }: { settings: Settings; phases: Pha
   );
 }
 
+export function ShowcaseTeaser() {
+  return (
+    <section className="container-page pt-20 md:pt-28" aria-labelledby="showcase-teaser">
+      <Reveal>
+        <div className="card glow-card relative overflow-hidden p-7 sm:p-10">
+          <div aria-hidden className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-secondary/15 blur-[90px]" />
+          <div className="relative grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+            <div>
+              <p className="eyebrow">Also at CoU Technova 2026</p>
+              <h2 id="showcase-teaser" className="h2 mt-3">
+                Project Showcase <span className="text-gradient">Competition</span>
+              </h2>
+              <p className="lead mt-4">Built something innovative? Comilla University students can showcase projects, prototypes and research ideas on 23 November.</p>
+              <p className="mt-4">
+                <span className="badge badge-warning px-3 py-1 text-sm">Comilla University students only</span>
+              </p>
+            </div>
+            <div>
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                {[
+                  ["Event", "23 Nov 2026"],
+                  ["Register", "13 – 22 Nov"],
+                  ["Fee", "BDT 50 / person"],
+                  ["Team", "Up to 4"],
+                ].map(([k, v]) => (
+                  <div key={k} className="rounded-xl border border-line bg-fg/[0.03] p-3">
+                    <dt className="text-xs uppercase tracking-wider text-muted">{k}</dt>
+                    <dd className="mt-1 font-semibold">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              <Link href="/showcase" className="btn btn-primary mt-5 w-full">
+                View the showcase <ArrowRight size={17} aria-hidden />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
 export function Domains({ settings, compact }: { settings: Settings; compact?: boolean }) {
   return (
     <ul className={cn("grid gap-4 sm:grid-cols-2", !compact && "lg:grid-cols-3")}>

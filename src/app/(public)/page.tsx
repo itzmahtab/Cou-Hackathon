@@ -1,6 +1,6 @@
 import { ArrowRight, FileText, Megaphone } from "lucide-react";
 import Link from "next/link";
-import { About, Domains, FinalCta, Hero, HomeFaq, PrizeCards, ScheduleList, Sponsors, Stats, TeamFormation, Timeline } from "@/components/sections/home";
+import { About, ShowcaseTeaser, Domains, FinalCta, Hero, HomeFaq, PrizeCards, ScheduleList, Sponsors, Stats, TeamFormation, Timeline } from "@/components/sections/home";
 import { Reveal } from "@/components/ui/motion";
 import { SectionHeader } from "@/components/ui/page-header";
 import { RULEBOOK_URL, RULES } from "@/config/content";
@@ -51,6 +51,7 @@ export default async function HomePage() {
       <Stats settings={settings} />
       <About />
       <Timeline settings={settings} phases={phases} />
+      <ShowcaseTeaser />
 
       <section className="section container-page">
         <Reveal>
