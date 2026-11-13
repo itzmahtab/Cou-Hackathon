@@ -2,6 +2,7 @@ import { logActivity } from "@/lib/auth/session";
 import { TEAM_STATUSES } from "@/lib/constants";
 import { toCsv } from "@/lib/csv";
 import { clientIp, handle } from "@/lib/http";
+import { rateLimit } from "@/lib/security/ratelimit";
 import { requireAdmin } from "@/lib/server";
 import { formatDhaka } from "@/lib/time";
 import { exportRows } from "@/features/admin/queries";
@@ -10,6 +11,7 @@ import type { TeamStatus } from "@/lib/db/schema";
 /** One row per participant. `?status=SHORTLISTED,CONFIRMED` narrows the export. */
 export const GET = handle(async (req: Request) => {
   const { ctx, admin } = await requireAdmin("registrations.export");
+  await rateLimit(ctx, `admin-export:${admin.id}`, 30, 60 * 60);
   const raw = new URL(req.url).searchParams.get("status");
   const statuses = raw ? (raw.split(",").filter((s) => (TEAM_STATUSES as readonly string[]).includes(s)) as TeamStatus[]) : undefined;
   const rows = await exportRows(ctx, statuses?.length ? statuses : undefined);

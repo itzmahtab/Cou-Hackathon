@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, sql } from "drizzle-orm";
 import type { Ctx } from "@/lib/ctx";
 import { attendance, ideaSubmissions, participants, payments, statusOtps, teams } from "@/lib/db/schema";
 import { AppError } from "@/lib/http";
@@ -80,12 +80,23 @@ export async function verifyStatusOtp(ctx: Ctx, registrationId: string, email: s
       .limit(1)
   )[0];
   if (!otp || otp.expiresAt < ctx.now() || otp.attempts >= OTP_MAX_ATTEMPTS) throw fail;
+  // Count the attempt before checking it, in one conditional statement, so parallel
+  // guesses cannot slip past the limit.
+  const counted = await ctx.db
+    .update(statusOtps)
+    .set({ attempts: sql`${statusOtps.attempts} + 1` })
+    .where(and(eq(statusOtps.id, otp.id), isNull(statusOtps.consumedAt), lt(statusOtps.attempts, OTP_MAX_ATTEMPTS)))
+    .returning({ id: statusOtps.id });
+  if (counted.length === 0) throw fail;
   const matches = safeEqual(await sha256Hex(`${otp.id}:${code.trim()}`), otp.codeHash);
-  if (!matches) {
-    await ctx.db.update(statusOtps).set({ attempts: otp.attempts + 1 }).where(eq(statusOtps.id, otp.id));
-    throw fail;
-  }
-  await ctx.db.update(statusOtps).set({ consumedAt: ctx.now() }).where(eq(statusOtps.id, otp.id));
+  if (!matches) throw fail;
+  // Single use: only the first correct submission consumes the code.
+  const consumed = await ctx.db
+    .update(statusOtps)
+    .set({ consumedAt: ctx.now() })
+    .where(and(eq(statusOtps.id, otp.id), isNull(statusOtps.consumedAt)))
+    .returning({ id: statusOtps.id });
+  if (consumed.length === 0) throw fail;
   return participant.teamId;
 }
 

@@ -3,6 +3,7 @@ import type { Permission } from "@/lib/auth/permissions";
 import { logActivity } from "@/lib/auth/session";
 import { files } from "@/lib/db/schema";
 import { AppError, clientIp, handle } from "@/lib/http";
+import { rateLimit } from "@/lib/security/ratelimit";
 import { requireAdmin } from "@/lib/server";
 
 // Which permission unlocks each kind of document.
@@ -15,6 +16,7 @@ const REQUIRED: Record<string, Permission> = {
 export const GET = handle(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const { ctx, admin } = await requireAdmin();
+  await rateLimit(ctx, `admin-file:${admin.id}`, 600, 60 * 60);
   const file = (await ctx.db.select().from(files).where(eq(files.id, id)).limit(1))[0];
   // Same answer for "does not exist" and "not yours to see".
   const notFound = new AppError(404, "NOT_FOUND", "File not found.");
