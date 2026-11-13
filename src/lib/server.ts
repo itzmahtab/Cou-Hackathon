@@ -28,6 +28,8 @@ export async function requireAdmin(permission?: Permission): Promise<{ admin: Ad
   const ctx = getCtx();
   const admin = await currentAdmin(ctx);
   if (!admin) throw new AppError(401, "UNAUTHENTICATED", "Please sign in.");
+  // Same rule as the pages: a temporary password must be changed before anything else.
+  if (admin.mustChangePassword) throw new AppError(403, "PASSWORD_CHANGE_REQUIRED", "Change your temporary password first.");
   if (permission && !can(admin.role, permission)) throw new AppError(403, "FORBIDDEN", "Your role does not allow this action.");
   return { admin, ctx };
 }

@@ -12,6 +12,8 @@ export const POST = handle(async (req) => {
   const ctx = getCtx();
   await rateLimit(ctx, `otp-verify:${clientIp(req)}`, 10, 15 * 60);
   const input = schema.parse(await readJson(req));
+  // Caps guesses against one registration from many IPs.
+  await rateLimit(ctx, `otp-verify-reg:${input.registrationId.trim().toUpperCase()}`, 10, 15 * 60);
   const teamId = await verifyStatusOtp(ctx, input.registrationId, input.email, input.code);
   (await cookies()).set(STATUS_COOKIE, await signStatusCookie(ctx, teamId), {
     httpOnly: true,

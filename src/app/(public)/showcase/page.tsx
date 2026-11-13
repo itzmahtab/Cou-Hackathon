@@ -9,7 +9,7 @@ import { SHOWCASE } from "@/config/showcase";
 
 export const metadata: Metadata = {
   title: "Project Showcase Competition",
-  description: "CoU Technova 2026 Project Showcase Competition for Comilla University students. 23 November 2026. Register 13 – 22 November, BDT 50 per participant.",
+  description: "CoU Technova 2026 Project Showcase Competition for Comilla University students. 23 November 2026. Register 13 – 22 November, BDT 50 per team.",
   alternates: { canonical: "/showcase" },
 };
 
@@ -19,7 +19,7 @@ export default function ShowcasePage() {
   const facts = [
     { icon: CalendarDays, label: "Event date", value: SHOWCASE.eventDate },
     { icon: Ticket, label: "Registration", value: `${SHOWCASE.registrationOpens.replace(" 2026", "")} – ${SHOWCASE.registrationCloses}` },
-    { icon: Award, label: "Fee", value: `BDT ${SHOWCASE.feeBdt} per participant` },
+    { icon: Award, label: "Fee", value: `BDT ${SHOWCASE.feeBdt} per team` },
     { icon: Users, label: "Team size", value: `Up to ${SHOWCASE.maxTeam} members` },
     { icon: MapPin, label: "Venue", value: SHOWCASE.venue },
     { icon: GraduationCap, label: "Who can join", value: SHOWCASE.eligibility },
@@ -110,7 +110,7 @@ export default function ShowcasePage() {
               <li>Form a team of up to {SHOWCASE.maxTeam} Comilla University students, or take part alone.</li>
               <li>Register between {SHOWCASE.registrationOpens} and {SHOWCASE.registrationCloses}.</li>
               <li>
-                Pay BDT {SHOWCASE.feeBdt} per participant by <strong className="text-fg">bKash Send Money</strong> to <strong className="whitespace-nowrap font-mono text-fg">{formatPhone(SHOWCASE.bkash)}</strong> (a team of four pays BDT {SHOWCASE.feeBdt * 4}). Keep the transaction ID for the registration form.
+                Pay BDT {SHOWCASE.feeBdt} per team by <strong className="text-fg">bKash Send Money</strong> to <strong className="whitespace-nowrap font-mono text-fg">{formatPhone(SHOWCASE.bkash)}</strong>. The fee is the same for a team of one, two, three or four. Keep the transaction ID for the registration form.
               </li>
               <li>Bring your project to {SHOWCASE.venue} on {SHOWCASE.eventDate}. Carry your student ID card.</li>
             </ol>
@@ -126,7 +126,7 @@ export default function ShowcasePage() {
             <div className="card mb-5 border-primary/40 p-7">
               <p className="eyebrow text-muted">Showcase fee</p>
               <p className="mt-2 font-mono text-4xl font-semibold">BDT {SHOWCASE.feeBdt}</p>
-              <p className="text-sm text-muted">per participant</p>
+              <p className="text-sm text-muted">per team, for 1 to {SHOWCASE.maxTeam} members</p>
               <dl className="mt-5 grid gap-1 text-sm">
                 <dt className="text-xs uppercase tracking-wider text-muted">bKash (Send Money)</dt>
                 <dd className="font-mono text-lg font-semibold">{formatPhone(SHOWCASE.bkash)}</dd>

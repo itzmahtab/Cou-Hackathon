@@ -5,7 +5,7 @@ name: Deploy
 # The account ID, database and bucket names are in wrangler.jsonc.
 on:
   push:
-    branches: [main, claude/awesome-knuth-v2adha]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

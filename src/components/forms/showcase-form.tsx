@@ -7,7 +7,7 @@ import { formatPhone } from "@/config/content";
 import { SHOWCASE } from "@/config/showcase";
 import { SHOWCASE_CATEGORIES } from "@/lib/constants";
 import { cn } from "@/lib/cn";
-import { SHOWCASE_FEE_PER_PERSON, showcaseSchema } from "@/features/showcase/schema";
+import { SHOWCASE_FEE_PER_TEAM, showcaseSchema } from "@/features/showcase/schema";
 import { Field } from "./field";
 import { Turnstile } from "./turnstile";
 
@@ -29,7 +29,7 @@ export function ShowcaseForm({ turnstileSiteKey }: { turnstileSiteKey?: string }
   const [done, setDone] = useState<{ registrationId: string; feeBdt: number; teamSize: number } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const fee = SHOWCASE_FEE_PER_PERSON * size;
+  const fee = SHOWCASE_FEE_PER_TEAM;
   const err = (k: string) => errors[k];
   const setMember = (i: number, k: keyof Member, v: string) => setMembers((ms) => ms.map((m, j) => (j === i ? { ...m, [k]: v } : m)));
 
@@ -124,12 +124,13 @@ export function ShowcaseForm({ turnstileSiteKey }: { turnstileSiteKey?: string }
           <legend className="field-label">
             Number of members <span className="text-danger" aria-hidden>*</span>
           </legend>
+          <p className="mb-3 text-sm text-muted">The fee is BDT {SHOWCASE_FEE_PER_TEAM} for the whole team, whatever its size.</p>
           <div className="grid grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((n) => (
               <label key={n} className={cn("cursor-pointer rounded-xl border p-3 text-center transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary-soft", size === n ? "border-primary bg-primary/15" : "border-line bg-surface-2/60 hover:border-primary-soft/50")}>
                 <input type="radio" name="size" className="sr-only" checked={size === n} onChange={() => setSize(n)} />
                 <span className="block font-mono text-2xl font-semibold">{n}</span>
-                <span className="block text-xs text-muted">BDT {SHOWCASE_FEE_PER_PERSON * n}</span>
+                <span className="block text-xs text-muted">{n === 1 ? "member" : "members"}</span>
               </label>
             ))}
           </div>
@@ -200,7 +201,7 @@ export function ShowcaseForm({ turnstileSiteKey }: { turnstileSiteKey?: string }
         </h2>
         <div className="mt-4 rounded-xl border border-primary/40 bg-primary/[0.06] p-4 text-sm">
           <p>
-            Send <strong className="font-mono text-base">BDT {fee}</strong> ({size} × BDT {SHOWCASE_FEE_PER_PERSON}) by <strong>bKash Send Money</strong> to{" "}
+            Send <strong className="font-mono text-base">BDT {fee}</strong> (one fee for the whole team) by <strong>bKash Send Money</strong> to{" "}
             <strong className="whitespace-nowrap font-mono text-base">{formatPhone(SHOWCASE.bkash)}</strong>, then enter the details below.
           </p>
         </div>
