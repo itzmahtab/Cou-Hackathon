@@ -5,7 +5,7 @@ const id = () => text("id").primaryKey();
 const createdAt = () => integer("created_at").notNull();
 const updatedAt = () => integer("updated_at").notNull();
 
-import { ADMIN_ROLES, EMAIL_STATUSES, FILE_CATEGORIES, PAYMENT_PROVIDERS, PAYMENT_STATUSES, POSITIONS, TEAM_STATUSES, TSHIRT_SIZES } from "../constants";
+import { ADMIN_ROLES, EMAIL_STATUSES, FILE_CATEGORIES, PAYMENT_PROVIDERS, PAYMENT_STATUSES, POSITIONS, SHOWCASE_CATEGORIES, SHOWCASE_STATUSES, TEAM_STATUSES, TSHIRT_SIZES } from "../constants";
 
 export { ADMIN_ROLES, EMAIL_STATUSES, FILE_CATEGORIES, PAYMENT_PROVIDERS, PAYMENT_STATUSES, POSITIONS, TEAM_STATUSES, TSHIRT_SIZES };
 
@@ -364,6 +364,64 @@ export const idempotencyKeys = sqliteTable("idempotency_keys", {
   responseJson: text("response_json").notNull(),
   createdAt: createdAt(),
 });
+
+/** Project Showcase Competition (Comilla University students only). Separate from the hackathon. */
+export const showcaseRegistrations = sqliteTable(
+  "showcase_registrations",
+  {
+    id: id(),
+    registrationId: text("registration_id").notNull(),
+    projectTitle: text("project_title").notNull(),
+    category: text("category", { enum: SHOWCASE_CATEGORIES }).notNull(),
+    description: text("description").notNull(),
+    teamSize: integer("team_size").notNull(),
+    feeBdt: integer("fee_bdt").notNull(),
+    senderPhone: text("sender_phone").notNull(),
+    transactionId: text("transaction_id").notNull(),
+    status: text("status", { enum: SHOWCASE_STATUSES }).notNull().default("PENDING_VERIFICATION"),
+    rejectionReason: text("rejection_reason"),
+    internalNote: text("internal_note"),
+    decidedBy: text("decided_by").references(() => admins.id),
+    decidedAt: integer("decided_at"),
+    submittedIp: text("submitted_ip"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("showcase_regid_uq").on(t.registrationId),
+    uniqueIndex("showcase_trx_uq").on(t.transactionId),
+    index("showcase_status_ix").on(t.status),
+    index("showcase_created_ix").on(t.createdAt),
+    check("showcase_size_ck", sql`${t.teamSize} between 1 and 4`),
+    check("showcase_status_ck", sql`${t.status} in (${inList(SHOWCASE_STATUSES)})`),
+  ],
+);
+
+export const showcaseMembers = sqliteTable(
+  "showcase_members",
+  {
+    id: id(),
+    registrationId: text("registration_id").notNull().references(() => showcaseRegistrations.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    fullName: text("full_name").notNull(),
+    studentId: text("student_id").notNull(),
+    studentIdNorm: text("student_id_norm").notNull(),
+    department: text("department").notNull(),
+    session: text("session").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("showcase_members_email_uq").on(t.email),
+    uniqueIndex("showcase_members_student_uq").on(t.studentIdNorm),
+    uniqueIndex("showcase_members_pos_uq").on(t.registrationId, t.position),
+    check("showcase_members_pos_ck", sql`${t.position} between 1 and 4`),
+  ],
+);
+
+export type ShowcaseRegistration = typeof showcaseRegistrations.$inferSelect;
+export type ShowcaseMember = typeof showcaseMembers.$inferSelect;
 
 export type Admin = typeof admins.$inferSelect;
 export type Team = typeof teams.$inferSelect;

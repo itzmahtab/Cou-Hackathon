@@ -36,6 +36,13 @@ export function newRegistrationId(): string {
   return "COU26-" + Array.from(bytes, (b) => CROCKFORD[b % 32]).join("");
 }
 
+export const SHOWCASE_ID_PATTERN = /^SHOW26-[0-9A-HJKMNP-TV-Z]{6}$/;
+
+export function newShowcaseId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return "SHOW26-" + Array.from(bytes, (b) => CROCKFORD[b % 32]).join("");
+}
+
 export function newOtp(): string {
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
   return n.toString().padStart(6, "0");

@@ -242,9 +242,14 @@ export function ShowcaseTeaser() {
                   </div>
                 ))}
               </dl>
-              <Link href="/showcase" className="btn btn-primary mt-5 w-full">
-                View the showcase <ArrowRight size={17} aria-hidden />
-              </Link>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <Link href="/showcase/register" className="btn btn-primary">
+                  Register <ArrowRight size={17} aria-hidden />
+                </Link>
+                <Link href="/showcase" className="btn btn-secondary">
+                  Details
+                </Link>
+              </div>
             </div>
           </div>
         </div>

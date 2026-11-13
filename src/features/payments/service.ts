@@ -10,7 +10,9 @@ import { formatDhaka, formatDhakaDate, windowState } from "@/lib/time";
 import { enqueue, statusLink, type OutboxEntry } from "../email/outbox";
 import { normalisePhone } from "../registration/schema";
 
-export const normaliseTransactionId = (s: string) => s.replace(/\s+/g, "").toUpperCase();
+import { normaliseTransactionId } from "./schema-helpers";
+
+export { normaliseTransactionId };
 
 export const paymentSchema = z
   .object({

@@ -10,7 +10,16 @@ export const SHOWCASE = {
   registrationCloses: "22 November 2026",
   feeBdt: 50,
   maxTeam: 4,
-  venue: "Comilla University",
+  venue: "Faculty of Engineering, Comilla University",
+  /** bKash for the showcase fee only. The hackathon's payment numbers are set separately in Admin -> Settings. */
+  bkash: "+8801752166856",
+  /** Link to the registration form. Leave empty until it is ready; the page then points people to the contacts. */
+  registrationUrl: "/showcase/register",
+  contacts: [
+    { name: "Rifat", dept: "CSE", phone: "+8801581726138" },
+    { name: "Mehedi", dept: "ICT", phone: "+8801752166856" },
+  ],
+  email: "mhasan.itsmehedi@gmail.com",
   organiser: "Faculty of Engineering, Comilla University",
   categories: [
     { title: "Artificial Intelligence & Machine Learning", body: "Models, intelligent apps and data-driven tools." },

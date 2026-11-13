@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FOOTER_NAV, NAV, SITE } from "@/config/site";
-import { formatPhone, HELPLINE, HELPLINE_EMAIL, RULEBOOK_URL } from "@/config/content";
+import { HELPLINE_EMAIL, RULEBOOK_URL } from "@/config/content";
 
 export function Footer({ contactEmail, contactPhone }: { contactEmail: string; contactPhone: string }) {
   // The helpline email is already listed above; don't show it twice.
@@ -44,7 +44,7 @@ export function Footer({ contactEmail, contactPhone }: { contactEmail: string; c
               Rule book (PDF)
             </a>
             <Link href="/contact#helpline" className="mt-2.5 block text-muted hover:text-fg">
-              Helpline: {formatPhone(HELPLINE[0].phone)}
+              Helpline
             </Link>
             <a href={`mailto:${HELPLINE_EMAIL}`} className="mt-2.5 block break-all text-muted hover:text-fg">
               {HELPLINE_EMAIL}

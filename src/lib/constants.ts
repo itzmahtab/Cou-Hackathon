@@ -6,4 +6,14 @@ export const FILE_CATEGORIES = ["STUDENT_ID", "IDEA_DOC", "PAYMENT_SCREENSHOT"] 
 export const PAYMENT_PROVIDERS = ["BKASH", "NAGAD"] as const;
 export const PAYMENT_STATUSES = ["PENDING_VERIFICATION", "VERIFIED", "REJECTED"] as const;
 export const EMAIL_STATUSES = ["QUEUED", "SENT", "FAILED", "DEAD"] as const;
+export const SHOWCASE_CATEGORIES = [
+  "Artificial Intelligence & Machine Learning",
+  "Web & Software Development",
+  "Robotics & Automation",
+  "IoT & Embedded Systems",
+  "Research & Innovation",
+  "Environmental Technology",
+  "Other Innovative Projects",
+] as const;
+export const SHOWCASE_STATUSES = ["PENDING_VERIFICATION", "CONFIRMED", "REJECTED"] as const;
 export const POSITIONS = ["CHAMPION", "FIRST_RUNNER_UP", "SECOND_RUNNER_UP"] as const;

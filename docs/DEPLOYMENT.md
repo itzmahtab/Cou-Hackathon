@@ -11,7 +11,7 @@ One Cloudflare Worker built with `@opennextjs/cloudflare`, one D1 database and o
 | D1 `cou-hackathon` | Created (`befa4b62-…`), migration `0000_init` applied |
 | R2 `cou-hackathon-files` | Created, private, no public domain |
 | Worker secrets | `SESSION_SECRET` and `CRON_SECRET` set |
-| Site URL | https://cou-hackathon.cou-hackathon.workers.dev |
+| Site URL | https://coutechnova.xyz (Cloudflare zone on this account; www redirects to the apex). The workers.dev address still works |
 | Deploys | GitHub Actions `deploy.yml`, on every push to `main` and to `claude/awesome-knuth-v2adha`. Needs the `CLOUDFLARE_API_TOKEN` repository secret |
 | Email | Gmail SMTP via Nodemailer, from coutechnova2026@gmail.com. Needs the `SMTP_PASSWORD` secret (a Gmail App Password); until then emails stay queued (section 9) |
 | Turnstile | Not configured: the check is skipped (section 10) |

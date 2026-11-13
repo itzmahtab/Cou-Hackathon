@@ -224,6 +224,55 @@ export const TEMPLATES = {
       ],
       cta: { label: "Open payment verification", url: s(p.url) },
     }),
+
+  showcase_received: (p: P) =>
+    layout({
+      subject: `Showcase registration received: ${s(p.projectTitle)} (${s(p.registrationId)})`,
+      heading: "Your showcase registration is in.",
+      greeting: `Hi ${s(p.name)},`,
+      paragraphs: [
+        `Your team is registered for the CoU Technova 2026 Project Showcase Competition. An organiser will now check your bKash payment against the statement. You will get another email when it is verified.`,
+        "Keep your registration ID safe and bring your student ID card on the day.",
+      ],
+      facts: [
+        ["Registration ID", s(p.registrationId)],
+        ["Project", s(p.projectTitle)],
+        ["Category", s(p.category)],
+        ["Members", (p.members as string[]).join(", ")],
+        ["Fee paid", `BDT ${s(p.feeBdt)}`],
+        ["bKash transaction ID", s(p.transactionId)],
+        ["Event", `${s(p.eventDate)}, ${s(p.venue)}`],
+      ],
+      footnote: `Questions? Contact ${s(p.contact)}.`,
+    }),
+
+  showcase_confirmed: (p: P) =>
+    layout({
+      subject: `Confirmed: ${s(p.projectTitle)} is in the Project Showcase`,
+      heading: "Your showcase place is confirmed.",
+      greeting: `Hi ${s(p.name)},`,
+      paragraphs: [
+        `Payment verified. Your project "${s(p.projectTitle)}" is confirmed for the CoU Technova 2026 Project Showcase Competition.`,
+        "Bring your project and your student ID card. Every registered participant receives an e-certificate.",
+      ],
+      facts: [
+        ["Registration ID", s(p.registrationId)],
+        ["Event", `${s(p.eventDate)}, ${s(p.venue)}`],
+      ],
+      footnote: `Questions? Contact ${s(p.contact)}.`,
+    }),
+
+  showcase_rejected: (p: P) =>
+    layout({
+      subject: `Action needed: showcase payment for ${s(p.projectTitle)} could not be verified`,
+      heading: "We could not verify your payment.",
+      greeting: `Hi ${s(p.name)},`,
+      paragraphs: [`Reason given by the organiser: ${s(p.reason)}`, `Please contact ${s(p.contact)} to sort this out.`],
+      facts: [
+        ["Registration ID", s(p.registrationId)],
+        ["bKash transaction ID", s(p.transactionId)],
+      ],
+    }),
 } satisfies Record<string, (p: P) => RenderedEmail>;
 
 export type TemplateName = keyof typeof TEMPLATES;
@@ -239,6 +288,9 @@ export const TEMPLATE_LABELS: Record<TemplateName, string> = {
   results: "Final results",
   status_otp: "Status code",
   admin_payment_notice: "Admin: payment notice",
+  showcase_received: "Showcase: registration received",
+  showcase_confirmed: "Showcase: confirmed",
+  showcase_rejected: "Showcase: payment rejected",
 };
 
 export function renderEmail(template: string, payload: P): RenderedEmail {
