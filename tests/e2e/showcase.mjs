@@ -17,7 +17,7 @@ await p.goto(`${BASE}/showcase`);
 await p.getByRole("link", { name: /Register for the showcase/ }).first().click();
 await p.waitForURL(/\/showcase\/register/);
 await p.getByText("2", { exact: true }).click();
-await p.getByRole("button", { name: /Register and submit payment \(BDT 100\)/ }).click();
+await p.getByRole("button", { name: /Register and submit payment \(BDT 50\)/ }).click();
 await p.getByText("Some fields need attention.").waitFor();
 for (let i = 0; i < 2; i++) {
   const box = p.locator("fieldset").filter({ hasText: `Member ${i + 1}` });

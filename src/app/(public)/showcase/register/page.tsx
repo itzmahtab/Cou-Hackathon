@@ -8,7 +8,7 @@ import { getCtx } from "@/lib/ctx";
 
 export const metadata: Metadata = {
   title: "Register: Project Showcase",
-  description: "Register for the CoU Technova 2026 Project Showcase Competition. Comilla University students only. BDT 50 per participant.",
+  description: "Register for the CoU Technova 2026 Project Showcase Competition. Comilla University students only. BDT 50 per team.",
   alternates: { canonical: "/showcase/register" },
 };
 
@@ -20,7 +20,7 @@ export default async function ShowcaseRegisterPage() {
       <PageHeader
         eyebrow="Project Showcase · Registration"
         title="Register your project"
-        lead={`For Comilla University students only. Teams of 1 to ${SHOWCASE.maxTeam}, BDT ${SHOWCASE.feeBdt} per participant, paid by bKash. Registration is open ${SHOWCASE.registrationOpens.replace(" 2026", "")} – ${SHOWCASE.registrationCloses}.`}
+        lead={`For Comilla University students only. Teams of 1 to ${SHOWCASE.maxTeam}, BDT ${SHOWCASE.feeBdt} per team (whatever its size), paid by bKash. Registration is open ${SHOWCASE.registrationOpens.replace(" 2026", "")} – ${SHOWCASE.registrationCloses}.`}
       />
       <div className="container-page py-12 md:py-16">
         {state === "open" ? (

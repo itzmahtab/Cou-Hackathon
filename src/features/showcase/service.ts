@@ -8,7 +8,7 @@ import { windowState } from "@/lib/time";
 import { SHOWCASE } from "@/config/showcase";
 import { enqueue, enqueueStatements, type OutboxEntry } from "../email/outbox";
 import { normaliseStudentId } from "../registration/schema";
-import { SHOWCASE_FEE_PER_PERSON, type ShowcaseInput } from "./schema";
+import { SHOWCASE_FEE_PER_TEAM, type ShowcaseInput } from "./schema";
 
 /** Registration window, Bangladesh time, both ends inclusive. */
 export const SHOWCASE_OPEN_AT = "2026-11-13T00:00:00+06:00";
@@ -54,7 +54,7 @@ export async function registerShowcase(ctx: Ctx, input: ShowcaseInput, ip: strin
   const now = ctx.now();
   const id = uuid();
   const registrationId = newShowcaseId();
-  const feeBdt = SHOWCASE_FEE_PER_PERSON * people.length;
+  const feeBdt = SHOWCASE_FEE_PER_TEAM;
   const result: ShowcaseResult = { registrationId, projectTitle: input.project.title, teamSize: people.length, feeBdt };
   const rows = people.map((p, i) => ({
     id: uuid(),

@@ -54,9 +54,9 @@ describe("showcase registration", () => {
     const before = (await t.ctx.db.select().from(teams)).length;
     const res = await registerShowcase(t.ctx, input(3), "1.1.1.1");
     expect(res.registrationId).toMatch(SHOWCASE_ID_PATTERN);
-    expect(res.feeBdt).toBe(150);
+    expect(res.feeBdt).toBe(50);
     const reg = (await t.ctx.db.select().from(showcaseRegistrations).where(eq(showcaseRegistrations.registrationId, res.registrationId)))[0];
-    expect(reg).toMatchObject({ status: "PENDING_VERIFICATION", teamSize: 3, feeBdt: 150 });
+    expect(reg).toMatchObject({ status: "PENDING_VERIFICATION", teamSize: 3, feeBdt: 50 });
     expect(await t.ctx.db.select().from(showcaseMembers).where(eq(showcaseMembers.registrationId, reg.id))).toHaveLength(3);
     expect((await t.ctx.db.select().from(teams)).length).toBe(before);
     const mail = (await t.ctx.db.select().from(emailOutbox)).filter((m) => m.template === "showcase_received" && JSON.parse(m.payloadJson).registrationId === res.registrationId);
@@ -120,7 +120,7 @@ describe("showcase registration", () => {
 
     const stats = await showcaseStats(t.ctx);
     expect(stats.confirmed).toBe(1);
-    expect(stats.feesConfirmed).toBe(100);
+    expect(stats.feesConfirmed).toBe(50);
     const found = await listShowcase(t.ctx, { q: a.registrationId });
     expect(found).toHaveLength(1);
     expect(found[0].members).toHaveLength(2);

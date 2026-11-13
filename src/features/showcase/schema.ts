@@ -3,7 +3,8 @@ import { SHOWCASE_CATEGORIES } from "@/lib/constants";
 import { normaliseTransactionId } from "../payments/schema-helpers";
 import { collapse, normalisePhone, normaliseStudentId } from "../registration/schema";
 
-export const SHOWCASE_FEE_PER_PERSON = 50;
+/** One flat fee per team, whatever its size (1 to 4 members). */
+export const SHOWCASE_FEE_PER_TEAM = 50;
 export const SHOWCASE_MAX_TEAM = 4;
 
 const text = (min: number, max: number, label: string) =>
