@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Loader2, PartyPopper } from "lucide-react";
+import { Check, Clock, Copy, Loader2, Mail, Send } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatPhone } from "@/config/content";
@@ -69,10 +69,13 @@ export function ShowcaseForm({ turnstileSiteKey }: { turnstileSiteKey?: string }
   if (done) {
     return (
       <div className="card glow-card is-lit mx-auto max-w-2xl p-8 text-center sm:p-12" role="status">
-        <PartyPopper size={40} className="mx-auto text-secondary" aria-hidden />
-        <h2 className="h2 mt-5">You are registered.</h2>
+        <Send size={40} className="mx-auto text-secondary" aria-hidden />
+        <h2 className="h2 mt-5">Registration submitted</h2>
         <p className="mt-3 text-muted">
-          {done.teamSize} participant{done.teamSize > 1 ? "s" : ""} · BDT {done.feeBdt} paid by bKash
+          {done.teamSize} participant{done.teamSize > 1 ? "s" : ""} · BDT {done.feeBdt} sent by bKash
+        </p>
+        <p className="notice notice-info mx-auto mt-6 max-w-md text-left text-sm">
+          <strong>Payment pending verification.</strong> Your place is not confirmed yet. An organiser will check your bKash payment, and you will receive a confirmation email once it is verified.
         </p>
         <p className="eyebrow mt-8 text-muted">Registration ID</p>
         <div className="mt-2 flex items-center justify-center gap-3">
@@ -92,13 +95,13 @@ export function ShowcaseForm({ turnstileSiteKey }: { turnstileSiteKey?: string }
         </div>
         <ul className="mx-auto mt-8 max-w-md space-y-3 text-left text-sm text-muted">
           <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-success" aria-hidden /> A confirmation email is on its way to every member.
+            <Mail size={18} className="mt-0.5 shrink-0 text-secondary" aria-hidden /> Every member now gets an email saying the registration was received.
           </li>
           <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-success" aria-hidden /> An organiser will verify your bKash payment, then email you again.
+            <Clock size={18} className="mt-0.5 shrink-0 text-secondary" aria-hidden /> After an organiser verifies the payment, every member gets a confirmation email. If the payment cannot be verified, we will email you what to do.
           </li>
           <li className="flex gap-3">
-            <Check size={18} className="mt-0.5 shrink-0 text-success" aria-hidden /> Bring your project and student ID card on {SHOWCASE.eventDate}.
+            <Check size={18} className="mt-0.5 shrink-0 text-success" aria-hidden /> Once confirmed, bring your project and student ID card on {SHOWCASE.eventDate}.
           </li>
         </ul>
         <Link href="/showcase" className="btn btn-secondary mt-9">

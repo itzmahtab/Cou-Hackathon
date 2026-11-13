@@ -227,20 +227,21 @@ export const TEMPLATES = {
 
   showcase_received: (p: P) =>
     layout({
-      subject: `Showcase registration received: ${s(p.projectTitle)} (${s(p.registrationId)})`,
-      heading: "Your showcase registration is in.",
+      subject: `Showcase registration received, payment pending: ${s(p.projectTitle)} (${s(p.registrationId)})`,
+      heading: "We have received your showcase registration.",
       greeting: `Hi ${s(p.name)},`,
       paragraphs: [
-        `Your team is registered for the CoU Technova 2026 Project Showcase Competition. An organiser will now check your bKash payment against the statement. You will get another email when it is verified.`,
-        "Keep your registration ID safe and bring your student ID card on the day.",
+        `Thank you for registering for the CoU Technova 2026 Project Showcase Competition. Your place is not confirmed yet: an organiser will now check your bKash payment against the statement.`,
+        "You will get a confirmation email once the payment is verified. If it cannot be verified, we will email you what to do. Keep your registration ID safe.",
       ],
       facts: [
         ["Registration ID", s(p.registrationId)],
         ["Project", s(p.projectTitle)],
         ["Category", s(p.category)],
         ["Members", (p.members as string[]).join(", ")],
-        ["Fee paid", `BDT ${s(p.feeBdt)}`],
+        ["Fee sent", `BDT ${s(p.feeBdt)}`],
         ["bKash transaction ID", s(p.transactionId)],
+        ["Status", "Payment pending verification"],
         ["Event", `${s(p.eventDate)}, ${s(p.venue)}`],
       ],
       footnote: `Questions? Contact ${s(p.contact)}.`,
