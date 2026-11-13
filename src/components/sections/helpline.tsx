@@ -1,11 +1,12 @@
-import { MessageCircle, Phone } from "lucide-react";
-import { formatPhone, HELPLINE } from "@/config/content";
+import { Mail, MessageCircle, Phone } from "lucide-react";
+import { formatPhone, HELPLINE, HELPLINE_EMAIL } from "@/config/content";
 import { Reveal } from "@/components/ui/motion";
 
-/** One card per helpline volunteer, with call and WhatsApp buttons. */
+/** One card per helpline volunteer, with call and WhatsApp buttons, then the helpline email. */
 export function HelplineGrid() {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {HELPLINE.map((h, i) => (
         <Reveal as="li" key={h.phone} delay={Math.min(i * 0.04, 0.24)}>
           <div className="card flex h-full flex-col p-5">
@@ -23,5 +24,13 @@ export function HelplineGrid() {
         </Reveal>
       ))}
     </ul>
+    <p className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted">
+      <Mail size={16} className="text-secondary" aria-hidden />
+      Or email us at
+      <a href={`mailto:${HELPLINE_EMAIL}`} className="break-all font-semibold text-fg hover:text-primary-soft">
+        {HELPLINE_EMAIL}
+      </a>
+    </p>
+    </>
   );
 }

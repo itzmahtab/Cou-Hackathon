@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FOOTER_NAV, NAV, SITE } from "@/config/site";
-import { RULEBOOK_URL } from "@/config/content";
+import { HELPLINE_EMAIL, RULEBOOK_URL } from "@/config/content";
 
 export function Footer({ contactEmail, contactPhone }: { contactEmail: string; contactPhone: string }) {
+  // The helpline email is already listed above; don't show it twice.
+  const shownEmail = contactEmail && contactEmail.toLowerCase() !== HELPLINE_EMAIL ? contactEmail : "";
   return (
     <footer className="border-t border-line bg-surface/40">
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
@@ -44,12 +46,15 @@ export function Footer({ contactEmail, contactPhone }: { contactEmail: string; c
             <Link href="/contact#helpline" className="mt-2.5 block text-muted hover:text-fg">
               Helpline
             </Link>
+            <a href={`mailto:${HELPLINE_EMAIL}`} className="mt-2.5 block break-all text-muted hover:text-fg">
+              {HELPLINE_EMAIL}
+            </a>
           </p>
-          {(contactEmail || contactPhone) && (
+          {(shownEmail || contactPhone) && (
             <p className="mt-5 text-sm text-muted">
-              {contactEmail && (
-                <a href={`mailto:${contactEmail}`} className="block hover:text-fg">
-                  {contactEmail}
+              {shownEmail && (
+                <a href={`mailto:${shownEmail}`} className="block hover:text-fg">
+                  {shownEmail}
                 </a>
               )}
               {contactPhone && <span className="block">{contactPhone}</span>}

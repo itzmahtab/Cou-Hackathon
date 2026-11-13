@@ -93,5 +93,8 @@ export const HELPLINE = [
   { name: "Rifat", phone: "+8801642532704" },
 ];
 
+/** Helpline email, shown with the helpline numbers. */
+export const HELPLINE_EMAIL = "coutechnova2026@gmail.com";
+
 /** +8801875445951 -> +880 1875-445951 */
 export const formatPhone = (p: string) => p.replace(/^\+880(\d{4})(\d{6})$/, "+880 $1-$2");
