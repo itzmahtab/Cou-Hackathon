@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Presentation, CalendarCheck, ClipboardList, CreditCard, FileSearch, History, LayoutDashboard, ListChecks, LogOut, Mail, Menu, Settings, Trophy, UserCircle, Users, X } from "lucide-react";
+import { BadgeCheck, BarChart3, Presentation, CalendarCheck, ClipboardList, CreditCard, FileSearch, History, LayoutDashboard, ListChecks, LogOut, Mail, Menu, Settings, Trophy, UserCircle, Users, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,6 +14,7 @@ export const ADMIN_NAV = [
   { href: "/admin/registrations", label: "Registrations", icon: Users, perm: "registrations.read" },
   { href: "/admin/reviews", label: "Idea review", icon: FileSearch, perm: "reviews.read" },
   { href: "/admin/shortlist", label: "Shortlist", icon: ListChecks, perm: "shortlist.read" },
+  { href: "/admin/final-selection", label: "Final selection", icon: BadgeCheck, perm: "registrations.contact" },
   { href: "/admin/payments", label: "Payments", icon: CreditCard, perm: "payments.verify" },
   { href: "/admin/participants", label: "Approved participants", icon: ClipboardList, perm: "registrations.read" },
   { href: "/admin/showcase", label: "Project Showcase", icon: Presentation, perm: "registrations.read" },
