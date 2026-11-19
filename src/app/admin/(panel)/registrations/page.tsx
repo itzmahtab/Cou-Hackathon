@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import Link from "next/link";
+import { IdeaDocsDownload } from "@/components/admin/idea-docs-download";
 import { AdminHeader, Empty, Pagination, StatusBadge } from "@/components/admin/ui";
 import { listTeams, universityOptions } from "@/features/admin/queries";
 import { can } from "@/lib/auth/permissions";
@@ -24,11 +25,16 @@ export default async function Registrations({ searchParams }: { searchParams: SP
         title="Registrations"
         lead="Every team, newest first. Search by team, participant name, email, student ID, idea title or registration ID."
         actions={
-          can(admin.role, "registrations.export") && (
-            <a className="btn btn-secondary btn-sm" href={`/api/v1/admin/export/registrations${exportQs ? `?${exportQs}` : ""}`}>
-              <Download size={15} aria-hidden /> Export CSV
-            </a>
-          )
+          <>
+            {can(admin.role, "registrations.export") && (
+              <a className="btn btn-secondary btn-sm" href={`/api/v1/admin/export/registrations${exportQs ? `?${exportQs}` : ""}`}>
+                <Download size={15} aria-hidden /> Export CSV
+              </a>
+            )}
+            {(can(admin.role, "registrations.contact") || can(admin.role, "reviews.read")) && (
+              <IdeaDocsDownload status={sp.status} label="Idea docs (ZIP)" />
+            )}
+          </>
         }
       />
       <form className="card mb-5 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[2fr_1.4fr_0.8fr_1fr_1fr_auto]" role="search">
