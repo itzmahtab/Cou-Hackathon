@@ -54,7 +54,7 @@ describe("formatted selection email (TECHNOVA design)", () => {
     expect(m.fragment).toContain('href="mailto:coutechnova2026@gmail.com"');
     expect(m.fragment).toContain("INNOVATE. <span");
     expect(m.fragment).not.toMatch(/\{\w+\}|\{\{/);
-    expect(m.html.startsWith("<!DOCTYPE html>")).toBe(true);
+    expect(m.html.startsWith("<!doctype html>")).toBe(true);
     expect(m.text).toContain("TEAM MEMBERS:\n1. Md Yak Safu\n2. Munny Rahaman Dristy");
     expect(m.text).toContain("✈️ JOIN TELEGRAM GROUP: https://t.me/+i1nLFtZoiLkzYThl");
     expect(m.text).not.toContain("**");

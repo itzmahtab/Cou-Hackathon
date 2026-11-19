@@ -1,3 +1,5 @@
+import { DEFAULT_SELECTION_TEMPLATE, renderSelectionEmail, type SelectionTemplate, type TemplateVars } from "../selection/template";
+
 export interface RenderedEmail {
   subject: string;
   html: string;
@@ -274,6 +276,12 @@ export const TEMPLATES = {
         ["bKash transaction ID", s(p.transactionId)],
       ],
     }),
+  /** The organisers' selection email, rendered when it is queued (see features/selection). */
+  final_selection: (p: P) => {
+    const tpl = { ...DEFAULT_SELECTION_TEMPLATE, ...((p.tpl as Partial<SelectionTemplate> | undefined) ?? {}) };
+    const out = renderSelectionEmail(tpl, (p.vars as Partial<TemplateVars> | undefined) ?? { teamName: s(p.teamName) }, { members: Array.isArray(p.members) ? p.members.map(s) : [] });
+    return { subject: out.subject, html: out.html, text: out.text };
+  },
 } satisfies Record<string, (p: P) => RenderedEmail>;
 
 export type TemplateName = keyof typeof TEMPLATES;
@@ -292,6 +300,7 @@ export const TEMPLATE_LABELS: Record<TemplateName, string> = {
   showcase_received: "Showcase: registration received",
   showcase_confirmed: "Showcase: confirmed",
   showcase_rejected: "Showcase: payment rejected",
+  final_selection: "Final selection (team email)",
 };
 
 export function renderEmail(template: string, payload: P): RenderedEmail {

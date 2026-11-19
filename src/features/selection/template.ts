@@ -277,7 +277,7 @@ Title Sponsor: Gigabyte AORUS · Powered by IT Palace
 
 </table></td></tr></table>`;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(subject)}</title></head>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(subject)}</title></head>
 <body style="margin:0;padding:0;background:#0b0603;font-family:Arial,Helvetica,sans-serif;">${fragment}</body></html>`;
 
   const text = [

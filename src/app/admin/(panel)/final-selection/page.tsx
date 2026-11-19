@@ -31,7 +31,7 @@ export default async function FinalSelection() {
     <>
       <AdminHeader
         title="Final selection"
-        lead="Selected teams, the waiting queue and rejected teams, with every member's contacts. Emails are sent by hand: nothing on this page sends anything from the portal."
+        lead="Selected teams, the waiting queue and rejected teams, with every member's contacts. Nothing on this page sends email."
         actions={
           <a className="btn btn-secondary btn-sm" href="/api/v1/admin/export/final-selection">
             <Download size={15} aria-hidden /> Export contacts CSV
@@ -66,7 +66,7 @@ export default async function FinalSelection() {
           <li>
             Click <strong>Copy formatted email</strong>, then paste (Ctrl+V) into the message box: the banner, buttons and links come with it.
           </li>
-          <li>Check it and press Send. Use <strong>Preview</strong> to see the email first. The portal itself never sends anything.</li>
+          <li>Check it and press Send. Use <strong>Preview</strong> to see the email first. Nothing on this page sends email; to email all selected teams at once, use the Send button on the Emails page.</li>
         </ol>
         <TeamList teams={selected} compose={compose} withEmail />
       </Section>

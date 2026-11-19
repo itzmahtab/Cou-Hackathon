@@ -91,7 +91,7 @@ export function SelectionTemplateEditor({ action, initial, sample, canEdit }: { 
         </p>
         <iframe title="Email preview" srcDoc={mail.html} sandbox="" className="h-[960px] w-full rounded-xl border border-line bg-[#0b0603]" />
         <p className="text-xs text-muted">
-          The portal never sends this email. On <a className="underline" href="/admin/final-selection">Final selection</a>, each team has Gmail, Copy formatted email and Preview buttons.
+          Saving never sends anything. To email every selected team at once, use the Send button above (super admin). To send one team by hand, use <a className="underline" href="/admin/final-selection">Final selection</a>.
         </p>
       </div>
     </div>
