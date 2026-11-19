@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IdeaDocsDownload } from "@/components/admin/idea-docs-download";
 import { AdminHeader, Empty, StatusBadge } from "@/components/admin/ui";
 import { reviewQueue } from "@/features/reviews/queries";
 import { requireAdminPage } from "@/lib/server";
@@ -12,7 +13,11 @@ export default async function Reviews({ searchParams }: { searchParams: Promise<
   const todo = rows.filter((r) => r.mine === null).length;
   return (
     <>
-      <AdminHeader title="Idea review" lead={`Score each idea out of 100. ${todo} idea(s) in this view still need your review. Tick up to three to compare side by side.`} />
+      <AdminHeader
+        title="Idea review"
+        lead={`Score each idea out of 100. ${todo} idea(s) in this view still need your review. Tick up to three to compare side by side.`}
+        actions={<IdeaDocsDownload status={sp.status} />}
+      />
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <select name="mine" defaultValue={sp.mine ?? ""} className="input w-auto" aria-label="My reviews">
           <option value="">All ideas</option>
