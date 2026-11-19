@@ -1,28 +1,28 @@
-import { Download, ExternalLink, Mail } from "lucide-react";
+import { Download, ExternalLink, Eye, Mail } from "lucide-react";
 import Link from "next/link";
 import { CopyButton } from "@/components/admin/copy-button";
+import { CopyRichButton } from "@/components/admin/copy-rich-button";
 import { AdminHeader, Empty, Section, Stat, StatusBadge } from "@/components/admin/ui";
-import { selectionContext, templateVars, type SelectionTeam } from "@/features/selection/service";
-import { fillTemplate, gmailComposeLink, mailtoLink } from "@/features/selection/template";
+import { renderForTeam, selectionContext, type SelectionTeam } from "@/features/selection/service";
+import { gmailComposeLink, mailtoLink } from "@/features/selection/template";
 import { requireAdminPage } from "@/lib/server";
 
 export const metadata = { title: "Final selection" };
 
-type Composed = { subject: string; body: string; to: string[]; mailto: string; gmail: string };
+type Composed = { subject: string; text: string; fragment: string; to: string[]; mailto: string; gmail: string };
 
 /** Shows +8801XXXXXXXXX as 01XXX-XXXXXX, which people read and dial more easily. */
 const localPhone = (p: string) => (p.startsWith("+880") ? `0${p.slice(4, 8)}-${p.slice(8)}` : p);
 
 export default async function FinalSelection() {
   const { ctx } = await requireAdminPage("registrations.contact");
-  const { selected, waiting, rejected, others, settings, tpl } = await selectionContext(ctx);
+  const { selected, waiting, rejected, others, settings, tpl, render } = await selectionContext(ctx);
 
   const compose = (team: SelectionTeam): Composed => {
-    const vars = templateVars(team, settings, tpl);
-    const subject = fillTemplate(tpl.subject, vars);
-    const body = fillTemplate(tpl.body, vars);
+    const mail = renderForTeam(team, settings, tpl, render);
     const to = team.members.map((m) => m.email);
-    return { subject, body, to, mailto: mailtoLink(to, subject, body), gmail: gmailComposeLink(to, subject, body) };
+    // Gmail opens with recipients and subject; the formatted body is pasted in from "Copy formatted email".
+    return { subject: mail.subject, text: mail.text, fragment: mail.fragment, to, mailto: mailtoLink(to, mail.subject, mail.text), gmail: gmailComposeLink(to, mail.subject) };
   };
   const emailsOf = (list: SelectionTeam[]) => list.flatMap((t) => t.members.map((m) => m.email)).join(", ");
   const phonesOf = (list: SelectionTeam[]) => list.flatMap((t) => t.members.map((m) => `${m.fullName} (${t.name}): ${localPhone(m.phone)}`)).join("\n");
@@ -59,9 +59,15 @@ export default async function FinalSelection() {
           </div>
         }
       >
-        <p className="mb-4 text-sm text-muted">
-          <strong>Send email</strong> opens your own mail app with every member as a recipient and the template filled in for that team; you press Send there. <strong>Gmail</strong> does the same in a Gmail browser tab.
-        </p>
+        <ol className="mb-4 grid list-decimal gap-1 pl-5 text-sm text-muted">
+          <li>
+            Click <strong>Gmail</strong>: a compose window opens with every member as a recipient and the subject filled in.
+          </li>
+          <li>
+            Click <strong>Copy formatted email</strong>, then paste (Ctrl+V) into the message box: the banner, buttons and links come with it.
+          </li>
+          <li>Check it and press Send. Use <strong>Preview</strong> to see the email first. The portal itself never sends anything.</li>
+        </ol>
         <TeamList teams={selected} compose={compose} withEmail />
       </Section>
 
@@ -139,13 +145,16 @@ function TeamList({ teams, compose, withEmail = false, queue = false }: { teams:
                   <div className="flex flex-wrap gap-2">
                     {withEmail && (
                       <>
-                        <a className="btn btn-primary btn-sm" href={c.mailto}>
-                          <Mail size={14} aria-hidden /> Send email
-                        </a>
                         <a className="btn btn-secondary btn-sm" href={c.gmail} target="_blank" rel="noreferrer">
                           <ExternalLink size={14} aria-hidden /> Gmail
                         </a>
-                        <CopyButton text={c.body} label="Copy message" />
+                        <CopyRichButton html={c.fragment} text={c.text} primary />
+                        <a className="btn btn-secondary btn-sm" href={`/admin/final-selection/preview/${t.id}`} target="_blank" rel="noreferrer">
+                          <Eye size={14} aria-hidden /> Preview
+                        </a>
+                        <a className="btn btn-secondary btn-sm" href={c.mailto} title="Opens your mail app with a plain-text version">
+                          <Mail size={14} aria-hidden /> Plain text
+                        </a>
                       </>
                     )}
                     <CopyButton text={c.to.join(", ")} label="Copy emails" />

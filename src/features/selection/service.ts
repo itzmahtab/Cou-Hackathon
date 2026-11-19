@@ -5,16 +5,25 @@ import { activityRow } from "@/lib/auth/session";
 import { adminActivityLogs, eventSettings, ideaSubmissions, participants, shortlistSelections, teams, type Admin } from "@/lib/db/schema";
 import { getSettings, type Settings } from "@/lib/settings";
 import { formatDhaka, formatDhakaDate } from "@/lib/time";
-import { DEFAULT_SELECTION_TEMPLATE, joinNames, type SelectionTemplate, type TemplateVars } from "./template";
+import { DEFAULT_SELECTION_TEMPLATE, joinNames, renderSelectionEmail, safeUrl, type SelectionTemplate, type TemplateVars } from "./template";
 
 const TEMPLATE_KEY = "selectionEmailTemplate";
 /** Written on the shortlist history when a team is rejected in the final review. */
 export const REJECTED_NOTE = "Final review: rejected";
 
+const link = (label: string) => z.string().trim().max(300).refine((u) => safeUrl(u) !== null, `${label}: enter a full link starting with https://`);
+const D = DEFAULT_SELECTION_TEMPLATE;
+/** New fields default, so a template saved before they existed still loads. */
 export const selectionTemplateSchema = z.object({
   subject: z.string().trim().min(1, "Enter a subject.").max(300),
+  heading: z.string().trim().max(200).default(D.heading),
   body: z.string().trim().min(1, "Enter the message.").max(8000),
-  telegramLink: z.string().trim().url("Enter a full link, e.g. https://t.me/...").max(300),
+  telegramLink: link("Telegram link"),
+  rulebookLink: link("Rulebook link").default(D.rulebookLink),
+  websiteLink: link("Website link").default(D.websiteLink),
+  telegramLabel: z.string().trim().max(60).default(D.telegramLabel),
+  rulebookLabel: z.string().trim().max(60).default(D.rulebookLabel),
+  websiteLabel: z.string().trim().max(60).default(D.websiteLabel),
 });
 
 export async function getSelectionTemplate(ctx: Ctx): Promise<SelectionTemplate> {
@@ -28,7 +37,7 @@ export async function getSelectionTemplate(ctx: Ctx): Promise<SelectionTemplate>
   }
 }
 
-export async function saveSelectionTemplate(ctx: Ctx, admin: Admin, input: SelectionTemplate) {
+export async function saveSelectionTemplate(ctx: Ctx, admin: Admin, input: z.input<typeof selectionTemplateSchema>) {
   const value = selectionTemplateSchema.parse(input);
   const now = ctx.now();
   await ctx.db.batch([
@@ -71,6 +80,8 @@ export function templateVars(team: SelectionTeam, settings: Settings, tpl: Selec
     leaderName: team.members.find((m) => m.position === 1)?.fullName ?? names[0] ?? "",
     memberNames: joinNames(names),
     telegramLink: tpl.telegramLink,
+    rulebookLink: tpl.rulebookLink,
+    websiteLink: tpl.websiteLink,
     feeBdt: String(settings.feeBdt),
     paymentDeadline: formatDhaka(settings.phase2CloseAt),
     eventDate: formatDhakaDate(settings.eventStartAt),
@@ -123,5 +134,11 @@ export async function finalSelection(ctx: Ctx) {
 
 export async function selectionContext(ctx: Ctx) {
   const [data, settings, tpl] = await Promise.all([finalSelection(ctx), getSettings(ctx), getSelectionTemplate(ctx)]);
-  return { ...data, settings, tpl };
+  const render = { assetBase: ctx.env.APP_URL, contactEmail: settings.contactEmail || undefined };
+  return { ...data, settings, tpl, render };
+}
+
+/** The filled-in email for one team. */
+export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate, render: { assetBase: string; contactEmail?: string }) {
+  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), render);
 }

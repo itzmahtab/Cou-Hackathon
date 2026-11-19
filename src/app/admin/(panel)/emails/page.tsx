@@ -52,9 +52,9 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
       />
       <Section title="Selection email template (sent by hand)" className="mb-6">
         <p className="mb-4 text-sm text-muted">
-          Edit the message for the selected teams. Saving does not send anything. Use it from Final selection, where each team has a filled-in copy you can open in your mail app or copy.
+          Design the email for the selected teams: banner, message, clickable links and buttons. Saving does not send anything. Send it by hand from Final selection (Gmail, then Copy formatted email, then paste).
         </p>
-        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} canEdit />
+        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} render={sel.render} canEdit />
       </Section>
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <input name="q" defaultValue={sp.q} placeholder="Recipient email" aria-label="Recipient" className="input min-w-56 flex-1" />
