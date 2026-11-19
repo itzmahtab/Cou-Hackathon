@@ -1,6 +1,6 @@
 import { Download } from "lucide-react";
 import Link from "next/link";
-import { finaliseShortlistAction, setCandidateAction } from "@/app/admin/actions/review";
+import { finaliseShortlistAction, promoteWaitlistAction, releaseWaitlistAction, setCandidateAction, setWaitlistAction } from "@/app/admin/actions/review";
 import { ActionForm } from "@/components/admin/action-form";
 import { AdminHeader, Empty, Section, StatusBadge } from "@/components/admin/ui";
 import { shortlistBoard } from "@/features/reviews/queries";
@@ -20,6 +20,9 @@ export default async function Shortlist() {
   const manage = can(admin.role, "shortlist.manage") && !finalised;
   const override = can(admin.role, "shortlist.override");
   const unreviewed = rows.filter((r) => r.count === 0 && !["NOT_SELECTED"].includes(r.status)).length;
+  const waitlist = rows.filter((r) => r.waitlist !== null).sort((a, b) => (a.waitlist ?? 0) - (b.waitlist ?? 0));
+  // After finalising, promoting or releasing emails the team, so it is a super-admin action.
+  const manageWaitlist = finalised ? can(admin.role, "shortlist.finalise") : can(admin.role, "shortlist.manage");
 
   return (
     <>
@@ -34,7 +37,7 @@ export default async function Shortlist() {
           )
         }
       />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className={`card p-5 ${count > cap ? "border-danger/50" : ""}`}>
           <p className="text-xs uppercase tracking-wider text-muted">Selected</p>
           <p className="mt-2 font-mono text-3xl font-semibold">
@@ -46,6 +49,10 @@ export default async function Shortlist() {
           <p className="mt-2 font-mono text-3xl font-semibold">{unreviewed}</p>
         </div>
         <div className="card p-5">
+          <p className="text-xs uppercase tracking-wider text-muted">Waitlist</p>
+          <p className="mt-2 font-mono text-3xl font-semibold">{waitlist.length}</p>
+        </div>
+        <div className="card p-5">
           <p className="text-xs uppercase tracking-wider text-muted">Teams in contention</p>
           <p className="mt-2 font-mono text-3xl font-semibold">{rows.length}</p>
         </div>
@@ -54,13 +61,86 @@ export default async function Shortlist() {
       {!finalised && can(admin.role, "shortlist.finalise") && (
         <Section title="Finalise shortlist" className="mb-6 border-warning/40">
           <p className="mb-4 text-sm text-muted">
-            This marks the {count} selected team(s) as shortlisted and every other team as not selected, and emails every participant. It cannot be undone. {unreviewed > 0 && <strong className="text-warning">{unreviewed} idea(s) have no review yet.</strong>}
+            This marks the {count} selected team(s) as shortlisted and every other team as not selected, and emails every participant. {waitlist.length > 0 && <>The {waitlist.length} waitlisted team(s) stay in review and get no email until you promote or release them. </>}It cannot be undone. {unreviewed > 0 && <strong className="text-warning">{unreviewed} idea(s) have no review yet.</strong>}
           </p>
           <ActionForm action={finaliseShortlistAction} submitLabel={`Finalise ${count} teams and send emails`} submitClass="btn-danger" confirm={`Finalise the shortlist with ${count} teams and email all participants?`} confirmPhrase="FINALISE">
             <input type="hidden" name="confirm" value="FINALISE" />
           </ActionForm>
         </Section>
       )}
+
+      <Section title={`Waitlist (${waitlist.length})`} className="mb-6">
+        <p className="mb-4 text-sm text-muted">
+          Reserve teams in queue order. If a shortlisted team drops out, promote the next one.{" "}
+          {finalised ? "Promoting now shortlists the team and emails it; releasing marks it not selected and emails it." : "Waitlisted teams are not emailed when the shortlist is finalised."}
+        </p>
+        {waitlist.length === 0 ? (
+          <p className="text-sm text-muted">No teams on the waitlist. Use “Waitlist” in the table below to add one.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Queue</th>
+                  <th scope="col">Idea and team</th>
+                  <th scope="col">Average</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waitlist.map((r) => (
+                  <tr key={r.id}>
+                    <td className="font-mono font-semibold">#{r.waitlist}</td>
+                    <td>
+                      <Link href={`/admin/reviews/${r.id}`} className="font-semibold hover:text-primary-soft">
+                        {r.title}
+                      </Link>
+                      <span className="block text-xs text-muted">
+                        {r.name} · {r.registrationId}
+                      </span>
+                    </td>
+                    <td className="font-mono">{r.score ?? "—"}</td>
+                    <td>
+                      {manageWaitlist ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {finalised ? (
+                            <ActionForm action={promoteWaitlistAction} submitLabel="Promote and email" inline confirm={`Shortlist ${r.name} and email the team now?`}>
+                              <input type="hidden" name="teamId" value={r.id} />
+                            </ActionForm>
+                          ) : count < cap ? (
+                            <ActionForm action={promoteWaitlistAction} submitLabel="Promote" inline>
+                              <input type="hidden" name="teamId" value={r.id} />
+                            </ActionForm>
+                          ) : (
+                            <span className="text-xs text-muted">Shortlist full</span>
+                          )}
+                          {!finalised && (
+                            <ActionForm action={setWaitlistAction} submitLabel="Move" submitClass="btn-secondary" inline>
+                              <input type="hidden" name="teamId" value={r.id} />
+                              <input name="position" type="number" min={1} defaultValue={r.waitlist ?? 1} aria-label={`New queue position for ${r.name}`} className="input w-20 py-1 text-sm" />
+                            </ActionForm>
+                          )}
+                          <ActionForm
+                            action={releaseWaitlistAction}
+                            submitLabel={finalised ? "Release and email" : "Remove"}
+                            submitClass="btn-secondary"
+                            inline
+                            confirm={finalised ? `Mark ${r.name} as not selected and email the team?` : undefined}
+                          >
+                            <input type="hidden" name="teamId" value={r.id} />
+                          </ActionForm>
+                        </div>
+                      ) : (
+                        <span className="badge">Waitlist #{r.waitlist}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Section>
 
       {rows.length === 0 ? (
         <Empty>No ideas yet.</Empty>
@@ -101,11 +181,36 @@ export default async function Shortlist() {
                           <input type="hidden" name="teamId" value={r.id} />
                           <input type="hidden" name="selected" value="0" />
                         </ActionForm>
+                      ) : r.waitlist !== null ? (
+                        <span className="badge">Waitlist #{r.waitlist}</span>
                       ) : count < cap ? (
-                        <ActionForm action={setCandidateAction} submitLabel="Select" inline>
-                          <input type="hidden" name="teamId" value={r.id} />
-                          <input type="hidden" name="selected" value="1" />
-                        </ActionForm>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <ActionForm action={setCandidateAction} submitLabel="Select" inline>
+                            <input type="hidden" name="teamId" value={r.id} />
+                            <input type="hidden" name="selected" value="1" />
+                          </ActionForm>
+                          <ActionForm action={setWaitlistAction} submitLabel="Waitlist" submitClass="btn-secondary" inline>
+                            <input type="hidden" name="teamId" value={r.id} />
+                            <input type="hidden" name="position" value={waitlist.length + 1} />
+                          </ActionForm>
+                        </div>
+                      ) : r.status === "SUBMITTED" || r.status === "UNDER_REVIEW" ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <ActionForm action={setWaitlistAction} submitLabel="Waitlist" submitClass="btn-secondary" inline>
+                            <input type="hidden" name="teamId" value={r.id} />
+                            <input type="hidden" name="position" value={waitlist.length + 1} />
+                          </ActionForm>
+                          {override && (
+                            <details>
+                              <summary className="cursor-pointer text-xs text-warning">Shortlist full · override</summary>
+                              <ActionForm action={setCandidateAction} submitLabel="Add anyway" submitClass="btn-danger" className="mt-2">
+                                <input type="hidden" name="teamId" value={r.id} />
+                                <input type="hidden" name="selected" value="1" />
+                                <textarea name="justification" required minLength={20} rows={2} placeholder="Why this team should exceed the limit (min 20 characters)" className="input min-h-16 text-xs" />
+                              </ActionForm>
+                            </details>
+                          )}
+                        </div>
                       ) : override ? (
                         <details>
                           <summary className="cursor-pointer text-xs text-warning">Shortlist full · override</summary>
@@ -120,6 +225,8 @@ export default async function Shortlist() {
                       )
                     ) : r.isCandidate ? (
                       <span className="badge badge-primary">Selected</span>
+                    ) : r.waitlist !== null ? (
+                      <span className="badge">Waitlist #{r.waitlist}</span>
                     ) : null}
                   </td>
                 </tr>

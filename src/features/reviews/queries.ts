@@ -33,7 +33,7 @@ export async function ideaForReview(ctx: Ctx, teamId: string) {
 export async function shortlistBoard(ctx: Ctx) {
   const [rows, history] = await Promise.all([
     ctx.db
-      .select({ id: teams.id, name: teams.name, registrationId: teams.registrationId, status: teams.status, isCandidate: teams.isShortlistCandidate, score: teams.reviewScoreAvg, count: teams.reviewCount, size: teams.size, title: ideaSubmissions.title })
+      .select({ id: teams.id, name: teams.name, registrationId: teams.registrationId, status: teams.status, isCandidate: teams.isShortlistCandidate, waitlist: teams.waitlistPosition, score: teams.reviewScoreAvg, count: teams.reviewCount, size: teams.size, title: ideaSubmissions.title })
       .from(teams)
       .innerJoin(ideaSubmissions, eq(ideaSubmissions.teamId, teams.id))
       .where(inArray(teams.status, ["SUBMITTED", "UNDER_REVIEW", "SHORTLISTED", "NOT_SELECTED", "CONFIRMED"]))

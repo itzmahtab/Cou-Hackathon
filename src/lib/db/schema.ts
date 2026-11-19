@@ -76,6 +76,8 @@ export const teams = sqliteTable(
     isShortlistCandidate: integer("is_shortlist_candidate", { mode: "boolean" }).notNull().default(false),
     reviewScoreAvg: real("review_score_avg"),
     reviewCount: integer("review_count").notNull().default(0),
+    /** Position in the reserve queue (1 = next in line); null when not waitlisted. */
+    waitlistPosition: integer("waitlist_position"),
     submittedIp: text("submitted_ip"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -85,6 +87,7 @@ export const teams = sqliteTable(
     uniqueIndex("teams_name_uq").on(t.nameNorm),
     index("teams_status_ix").on(t.status),
     index("teams_created_ix").on(t.createdAt),
+    index("teams_waitlist_ix").on(t.waitlistPosition),
     check("teams_size_ck", sql`${t.size} between 1 and 3`),
     check("teams_status_ck", sql`${t.status} in (${inList(TEAM_STATUSES)})`),
   ],

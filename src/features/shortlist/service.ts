@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { Ctx } from "@/lib/ctx";
 import { can } from "@/lib/auth/permissions";
 import { activityRow } from "@/lib/auth/session";
@@ -48,11 +48,12 @@ export async function setCandidate(ctx: Ctx, admin: Admin, teamId: string, selec
   const eligible = and(eq(teams.id, teamId), eq(teams.isShortlistCandidate, false), inArray(teams.status, [...IN_REVIEW]));
   const added = await ctx.db
     .update(teams)
-    .set({ isShortlistCandidate: true, updatedAt: now })
+    .set({ isShortlistCandidate: true, waitlistPosition: null, updatedAt: now })
     .where(and(eligible, sql`(select count(*) from teams where is_shortlist_candidate = 1) < ${shortlistCapacity}`))
     .returning({ id: teams.id });
   if (added.length) {
     await log("ADD");
+    await renumberWaitlist(ctx);
     return { selected: true };
   }
 
@@ -66,8 +67,11 @@ export async function setCandidate(ctx: Ctx, admin: Admin, teamId: string, selec
   if (!reason) throw new AppError(409, "SHORTLIST_FULL", `The shortlist already has ${shortlistCapacity} teams. Remove one first.`);
   if (!can(admin.role, "shortlist.override")) throw new AppError(403, "FORBIDDEN", "Only a super admin can exceed the shortlist limit.");
   if (reason.length < 20) throw new AppError(400, "VALIDATION_ERROR", "Give a justification of at least 20 characters.", { justification: "At least 20 characters." });
-  const forced = await ctx.db.update(teams).set({ isShortlistCandidate: true, updatedAt: now }).where(eligible).returning({ id: teams.id });
-  if (forced.length) await log("OVERRIDE_ADD", reason);
+  const forced = await ctx.db.update(teams).set({ isShortlistCandidate: true, waitlistPosition: null, updatedAt: now }).where(eligible).returning({ id: teams.id });
+  if (forced.length) {
+    await log("OVERRIDE_ADD", reason);
+    await renumberWaitlist(ctx);
+  }
   return { selected: true, override: true };
 }
 
@@ -83,7 +87,8 @@ export async function finaliseShortlist(ctx: Ctx, admin: Admin) {
     await ctx.db.batch([
       ctx.db.insert(shortlistSelections).values({ id: uuid(), teamId: null, action: "FINALISE", adminId: admin.id, createdAt: now }),
       ctx.db.update(teams).set({ status: "SHORTLISTED", updatedAt: now }).where(and(eq(teams.isShortlistCandidate, true), inArray(teams.status, [...IN_REVIEW]))),
-      ctx.db.update(teams).set({ status: "NOT_SELECTED", updatedAt: now }).where(and(eq(teams.isShortlistCandidate, false), inArray(teams.status, [...IN_REVIEW]))),
+      // Waitlisted teams stay in review (and get no email) so they can still be promoted later.
+      ctx.db.update(teams).set({ status: "NOT_SELECTED", updatedAt: now }).where(and(eq(teams.isShortlistCandidate, false), isNull(teams.waitlistPosition), inArray(teams.status, [...IN_REVIEW]))),
       ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "shortlist.finalise", detail: { shortlisted: count } })),
     ]);
   } catch (err) {
@@ -132,4 +137,109 @@ export async function queueSelectionEmails(ctx: Ctx): Promise<number> {
   );
   await enqueue(ctx, entries);
   return entries.length;
+}
+
+/* ------------------------------------------------------------------ */
+/* Waitlist: an ordered reserve queue for teams that are not selected */
+/* ------------------------------------------------------------------ */
+
+const waitlistLog = (ctx: Ctx, admin: Admin, teamId: string, detail: Record<string, unknown>) =>
+  ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "shortlist.waitlist", entityType: "team", entityId: teamId, detail }));
+
+/** Waitlisted teams in queue order. */
+export async function waitlistIds(ctx: Ctx): Promise<string[]> {
+  const rows = await ctx.db
+    .select({ id: teams.id })
+    .from(teams)
+    .where(isNotNull(teams.waitlistPosition))
+    .orderBy(asc(teams.waitlistPosition), asc(teams.createdAt));
+  return rows.map((r) => r.id);
+}
+
+/** Writes positions 1..n in the given order, and clears the position of anyone not in it. */
+async function writeWaitlist(ctx: Ctx, order: string[]) {
+  const now = ctx.now();
+  const stmts = [
+    order.length
+      ? ctx.db.update(teams).set({ waitlistPosition: null, updatedAt: now }).where(and(isNotNull(teams.waitlistPosition), sql`${teams.id} not in (${sql.join(order.map((id) => sql`${id}`), sql`, `)})`))
+      : ctx.db.update(teams).set({ waitlistPosition: null, updatedAt: now }).where(isNotNull(teams.waitlistPosition)),
+    ...order.map((id, i) => ctx.db.update(teams).set({ waitlistPosition: i + 1, updatedAt: now }).where(eq(teams.id, id))),
+  ];
+  await ctx.db.batch(stmts as [(typeof stmts)[number], ...(typeof stmts)[number][]]);
+}
+
+/** Closes gaps after a team leaves the queue. */
+export async function renumberWaitlist(ctx: Ctx) {
+  const order = await waitlistIds(ctx);
+  await writeWaitlist(ctx, order);
+}
+
+/**
+ * Puts a team on the waitlist at `position` (1 = next in line; later teams move down),
+ * moves it within the queue, or removes it when `position` is null. Before finalising
+ * only; afterwards use promoteFromWaitlist / releaseFromWaitlist.
+ */
+export async function setWaitlistPosition(ctx: Ctx, admin: Admin, teamId: string, position: number | null) {
+  if (await finalisedAt(ctx)) throw new AppError(409, "ALREADY_FINALISED", "The shortlist has been finalised. Promote or release waitlisted teams instead.");
+  const team = (await ctx.db.select({ status: teams.status, isCandidate: teams.isShortlistCandidate }).from(teams).where(eq(teams.id, teamId)).limit(1))[0];
+  if (!team) throw new AppError(404, "NOT_FOUND", "Team not found.");
+  const order = (await waitlistIds(ctx)).filter((id) => id !== teamId);
+  if (position !== null) {
+    if (team.isCandidate) throw new AppError(409, "INVALID_TRANSITION", "Remove the team from the shortlist before waitlisting it.");
+    if (!IN_REVIEW.includes(team.status as (typeof IN_REVIEW)[number])) throw new AppError(409, "INVALID_TRANSITION", "This team is not eligible for the waitlist.");
+    if (!Number.isInteger(position) || position < 1) throw new AppError(400, "VALIDATION_ERROR", "Position must be a whole number of 1 or more.");
+    order.splice(Math.min(position, order.length + 1) - 1, 0, teamId);
+  }
+  await writeWaitlist(ctx, order);
+  await waitlistLog(ctx, admin, teamId, position === null ? { removed: true } : { position: order.indexOf(teamId) + 1 });
+  return { position: position === null ? null : order.indexOf(teamId) + 1 };
+}
+
+/**
+ * Moves a waitlisted team onto the shortlist. Before finalising this is an ordinary
+ * selection (the capacity rule applies). After finalising the team becomes SHORTLISTED
+ * at once and receives the same "shortlisted" email as everyone else.
+ */
+export async function promoteFromWaitlist(ctx: Ctx, admin: Admin, teamId: string, justification?: string) {
+  const team = (await ctx.db.select({ position: teams.waitlistPosition, status: teams.status }).from(teams).where(eq(teams.id, teamId)).limit(1))[0];
+  if (!team) throw new AppError(404, "NOT_FOUND", "Team not found.");
+  if (team.position === null) throw new AppError(409, "INVALID_TRANSITION", "This team is not on the waitlist.");
+  if (!(await finalisedAt(ctx))) {
+    const res = await setCandidate(ctx, admin, teamId, true, justification);
+    return { ...res, emailsQueued: 0 };
+  }
+  const now = ctx.now();
+  const changed = await ctx.db
+    .update(teams)
+    .set({ status: "SHORTLISTED", isShortlistCandidate: true, waitlistPosition: null, updatedAt: now })
+    .where(and(eq(teams.id, teamId), isNotNull(teams.waitlistPosition), inArray(teams.status, [...IN_REVIEW])))
+    .returning({ id: teams.id });
+  if (!changed.length) throw new AppError(409, "INVALID_TRANSITION", "This team can no longer be promoted.");
+  await ctx.db.batch([
+    ctx.db.insert(shortlistSelections).values({ id: uuid(), teamId, action: "ADD", justification: `Promoted from waitlist #${team.position}`, adminId: admin.id, createdAt: now }),
+    ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "shortlist.promote", entityType: "team", entityId: teamId, detail: { fromPosition: team.position } })),
+  ]);
+  await renumberWaitlist(ctx);
+  const emailsQueued = await queueSelectionEmails(ctx);
+  return { selected: true, emailsQueued };
+}
+
+/**
+ * Takes a team off the waitlist. Before finalising it simply leaves the queue. After
+ * finalising it becomes NOT_SELECTED and receives the "not selected" email.
+ */
+export async function releaseFromWaitlist(ctx: Ctx, admin: Admin, teamId: string) {
+  if (!(await finalisedAt(ctx))) {
+    await setWaitlistPosition(ctx, admin, teamId, null);
+    return { emailsQueued: 0 };
+  }
+  const changed = await ctx.db
+    .update(teams)
+    .set({ status: "NOT_SELECTED", waitlistPosition: null, updatedAt: ctx.now() })
+    .where(and(eq(teams.id, teamId), isNotNull(teams.waitlistPosition), inArray(teams.status, [...IN_REVIEW])))
+    .returning({ id: teams.id });
+  if (!changed.length) throw new AppError(409, "INVALID_TRANSITION", "This team is not on the waitlist.");
+  await waitlistLog(ctx, admin, teamId, { released: true });
+  await renumberWaitlist(ctx);
+  return { emailsQueued: await queueSelectionEmails(ctx) };
 }
