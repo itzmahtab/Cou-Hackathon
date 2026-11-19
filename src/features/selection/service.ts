@@ -16,6 +16,7 @@ const link = (label: string) => z.string().trim().max(300).refine((u) => safeUrl
 const D = DEFAULT_SELECTION_TEMPLATE;
 /** New fields default, so a template saved before they existed still loads. */
 export const selectionTemplateSchema = z.object({
+  design: z.enum(["technova", "classic"]).default(D.design),
   subject: z.string().trim().min(1, "Enter a subject.").max(300),
   headline: z.string().trim().max(120).default(D.headline),
   subheadline: z.string().trim().max(160).default(D.subheadline),
@@ -23,6 +24,12 @@ export const selectionTemplateSchema = z.object({
   telegramNote: z.string().trim().max(1000).default(D.telegramNote),
   telegramLabel: z.string().trim().max(60).default(D.telegramLabel),
   websiteCaption: z.string().trim().max(160).default(D.websiteCaption),
+  classicSubject: z.string().trim().min(1, "Enter a subject.").max(300).default(D.classicSubject),
+  classicHeading: z.string().trim().max(200).default(D.classicHeading),
+  classicBody: z.string().trim().min(1, "Enter the message.").max(8000).default(D.classicBody),
+  classicTelegramLabel: z.string().trim().max(60).default(D.classicTelegramLabel),
+  classicRulebookLabel: z.string().trim().max(60).default(D.classicRulebookLabel),
+  classicWebsiteLabel: z.string().trim().max(60).default(D.classicWebsiteLabel),
   helplineEmail: z.string().trim().max(120).refine((v) => v === "" || /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(v), "Enter a valid helpline email.").default(D.helplineEmail),
   telegramLink: link("Telegram link"),
   websiteLink: link("Website link").default(D.websiteLink),
@@ -137,12 +144,12 @@ export async function finalSelection(ctx: Ctx) {
 
 export async function selectionContext(ctx: Ctx) {
   const [data, settings, tpl] = await Promise.all([finalSelection(ctx), getSettings(ctx), getSelectionTemplate(ctx)]);
-  return { ...data, settings, tpl };
+  return { ...data, settings, tpl, assetBase: ctx.env.APP_URL };
 }
 
 /** The filled-in email for one team. */
-export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate) {
-  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), { members: team.members.map((m) => m.fullName) });
+export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate, assetBase: string) {
+  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), { members: team.members.map((m) => m.fullName), assetBase });
 }
 
 /* ------------------------------------------------------------------ */
@@ -174,7 +181,7 @@ export async function sendSelectionEmails(ctx: Ctx, admin: Admin) {
   const entries: OutboxEntry[] = [];
   for (const team of selected) {
     // Rendered by the "final_selection" email template when sent, through the same escaping renderer.
-    const payload = { tpl, vars: templateVars(team, settings, tpl), members: team.members.map((m) => m.fullName) };
+    const payload = { tpl, vars: templateVars(team, settings, tpl), members: team.members.map((m) => m.fullName), assetBase: ctx.env.APP_URL };
     for (const m of team.members) {
       entries.push({
         template: SEND_TEMPLATE,

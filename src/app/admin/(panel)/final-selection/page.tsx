@@ -16,10 +16,10 @@ const localPhone = (p: string) => (p.startsWith("+880") ? `0${p.slice(4, 8)}-${p
 
 export default async function FinalSelection() {
   const { ctx } = await requireAdminPage("registrations.contact");
-  const { selected, waiting, rejected, others, settings, tpl } = await selectionContext(ctx);
+  const { selected, waiting, rejected, others, settings, tpl, assetBase } = await selectionContext(ctx);
 
   const compose = (team: SelectionTeam): Composed => {
-    const mail = renderForTeam(team, settings, tpl);
+    const mail = renderForTeam(team, settings, tpl, assetBase);
     const to = team.members.map((m) => m.email);
     // Gmail opens with recipients and subject; the formatted body is pasted in from "Copy formatted email".
     return { subject: mail.subject, text: mail.text, fragment: mail.fragment, to, mailto: mailtoLink(to, mail.subject, mail.text), gmail: gmailComposeLink(to, mail.subject) };

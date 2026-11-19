@@ -12,6 +12,7 @@ export async function saveSelectionTemplateAction(_: ActionResult | null, fd: Fo
     const { ctx, admin } = await requireAdmin("emails.manage");
     const f = (k: string) => String(fd.get(k) ?? "");
     await saveSelectionTemplate(ctx, admin, {
+      design: f("design") === "classic" ? "classic" : "technova",
       subject: f("subject"),
       headline: f("headline"),
       subheadline: f("subheadline"),
@@ -19,6 +20,12 @@ export async function saveSelectionTemplateAction(_: ActionResult | null, fd: Fo
       telegramNote: f("telegramNote"),
       telegramLabel: f("telegramLabel"),
       websiteCaption: f("websiteCaption"),
+      classicSubject: f("classicSubject"),
+      classicHeading: f("classicHeading"),
+      classicBody: f("classicBody"),
+      classicTelegramLabel: f("classicTelegramLabel"),
+      classicRulebookLabel: f("classicRulebookLabel"),
+      classicWebsiteLabel: f("classicWebsiteLabel"),
       helplineEmail: f("helplineEmail"),
       telegramLink: f("telegramLink"),
       websiteLink: f("websiteLink"),

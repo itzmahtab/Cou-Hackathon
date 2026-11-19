@@ -81,3 +81,28 @@ describe("formatted selection email (TECHNOVA design)", () => {
     expect(m.fragment).toContain("1. &lt;b&gt;z&lt;/b&gt;");
   });
 });
+
+describe("Purple banner design (classic)", () => {
+  const classic = { ...DEFAULT_SELECTION_TEMPLATE, design: "classic" as const };
+  const vars = { teamName: "Twin <logic>", registrationId: "COU26-2572E1", memberNames: "A and B", eventDate: "24 November 2026", venue: "Comilla University", feeBdt: "1345", paymentDeadline: "22 Nov 2026, 23:59", ideaTitle: "PoraBondhu" };
+
+  test("banner, Click-here Telegram link, three buttons, facts box and helpline footer", () => {
+    const m = renderSelectionEmail(classic, vars, { assetBase: "https://coutechnova.xyz/", members: ["A", "B"] });
+    expect(m.subject).toBe("Congratulations Twin <logic>! You are selected for the CoU AI Hackathon 2026 final");
+    expect(m.fragment).toContain('src="https://coutechnova.xyz/email/header.jpg"');
+    expect(m.fragment).toMatch(/<a href="https:\/\/t\.me\/\+i1nLFtZoiLkzYThl"[^>]*>Click here<\/a>/);
+    for (const label of [">Join Telegram channel<", ">Read the rulebook<", ">Visit website<"]) expect(m.fragment).toContain(label);
+    expect(m.fragment).toContain(">Registration ID<");
+    expect(m.fragment).toContain("mailto:coutechnova2026@gmail.com");
+    expect(m.fragment).toContain("Twin &lt;logic&gt;");
+    expect(m.fragment).not.toContain("TECHNOVA 2026</div>"); // not the orange design
+    expect(m.text).toContain("Click here (https://t.me/+i1nLFtZoiLkzYThl)");
+  });
+
+  test("the design field switches the output; unsafe input stays inert", () => {
+    expect(renderSelectionEmail(DEFAULT_SELECTION_TEMPLATE, vars).fragment).toContain("JOIN TELEGRAM GROUP");
+    const m = renderSelectionEmail({ ...classic, classicBody: "<img src=x onerror=alert(1)> [x](javascript:alert(1))" }, vars, { assetBase: "https://a.test" });
+    expect(m.fragment).not.toContain("<img src=x");
+    expect(m.fragment).not.toContain("javascript:");
+  });
+});

@@ -6,10 +6,10 @@ import { renderForTeam, selectionContext } from "@/features/selection/service";
 export const GET = handle(async (_req: Request, { params }: { params: Promise<{ teamId: string }> }) => {
   const { teamId } = await params;
   const { ctx } = await requireAdmin("registrations.contact");
-  const { selected, waiting, rejected, settings, tpl } = await selectionContext(ctx);
+  const { selected, waiting, rejected, settings, tpl, assetBase } = await selectionContext(ctx);
   const team = [...selected, ...waiting, ...rejected].find((t) => t.id === teamId);
   if (!team) throw new AppError(404, "NOT_FOUND", "Team not found in the final selection.");
-  const mail = renderForTeam(team, settings, tpl);
+  const mail = renderForTeam(team, settings, tpl, assetBase);
   return new Response(mail.html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
