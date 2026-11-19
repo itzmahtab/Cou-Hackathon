@@ -1,7 +1,10 @@
 import { and, desc, eq, like, sql, type SQL } from "drizzle-orm";
 import { drainNowAction, resendEmailAction, testEmailAction } from "@/app/admin/actions/results";
+import { saveSelectionTemplateAction } from "@/app/admin/actions/selection";
 import { ActionForm } from "@/components/admin/action-form";
-import { AdminHeader, Empty, StatusBadge } from "@/components/admin/ui";
+import { SelectionTemplateEditor } from "@/components/admin/selection-template-editor";
+import { selectionContext, templateVars } from "@/features/selection/service";
+import { AdminHeader, Empty, Section, StatusBadge } from "@/components/admin/ui";
 import { smtpPasswordSource } from "@/features/email/config";
 import { TEMPLATE_LABELS, type TemplateName } from "@/features/email/templates";
 import { EMAIL_STATUSES } from "@/lib/constants";
@@ -29,6 +32,9 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
     ctx.db.select({ status: emailOutbox.status, n: sql<number>`count(*)` }).from(emailOutbox).groupBy(emailOutbox.status),
   ]);
   const count = Object.fromEntries(counts.map((c) => [c.status, c.n]));
+  const sel = await selectionContext(ctx);
+  const sampleTeam = sel.selected[0] ?? null;
+  const sample = sampleTeam ? { ...templateVars(sampleTeam, sel.settings, sel.tpl), label: `filled in for ${sampleTeam.name}` } : null;
   const provider = ctx.env.EMAIL_PROVIDER;
   const smtpSource = await smtpPasswordSource(ctx);
 
@@ -44,6 +50,12 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
           </div>
         }
       />
+      <Section title="Selection email template (sent by hand)" className="mb-6">
+        <p className="mb-4 text-sm text-muted">
+          Edit the message for the selected teams. Saving does not send anything. Use it from Final selection, where each team has a filled-in copy you can open in your mail app or copy.
+        </p>
+        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} canEdit />
+      </Section>
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <input name="q" defaultValue={sp.q} placeholder="Recipient email" aria-label="Recipient" className="input min-w-56 flex-1" />
         <select name="status" defaultValue={sp.status ?? ""} className="input w-auto" aria-label="Status">
