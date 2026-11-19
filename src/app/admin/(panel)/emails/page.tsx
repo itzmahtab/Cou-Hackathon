@@ -34,7 +34,7 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
   const count = Object.fromEntries(counts.map((c) => [c.status, c.n]));
   const sel = await selectionContext(ctx);
   const sampleTeam = sel.selected[0] ?? null;
-  const sample = sampleTeam ? { ...templateVars(sampleTeam, sel.settings, sel.tpl), label: `filled in for ${sampleTeam.name}` } : null;
+  const sample = sampleTeam ? { vars: templateVars(sampleTeam, sel.settings, sel.tpl), members: sampleTeam.members.map((m) => m.fullName), label: `filled in for ${sampleTeam.name}` } : null;
   const provider = ctx.env.EMAIL_PROVIDER;
   const smtpSource = await smtpPasswordSource(ctx);
 
@@ -52,9 +52,9 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
       />
       <Section title="Selection email template (sent by hand)" className="mb-6">
         <p className="mb-4 text-sm text-muted">
-          Design the email for the selected teams: banner, message, clickable links and buttons. Saving does not send anything. Send it by hand from Final selection (Gmail, then Copy formatted email, then paste).
+          Edit the email for the selected teams (CoU TECHNOVA design: team card, Telegram button, helpline). Saving does not send anything. Send it by hand from Final selection (Gmail, then Copy formatted email, then paste).
         </p>
-        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} render={sel.render} canEdit />
+        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} canEdit />
       </Section>
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <input name="q" defaultValue={sp.q} placeholder="Recipient email" aria-label="Recipient" className="input min-w-56 flex-1" />

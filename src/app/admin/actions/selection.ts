@@ -11,14 +11,16 @@ export async function saveSelectionTemplateAction(_: ActionResult | null, fd: Fo
     const f = (k: string) => String(fd.get(k) ?? "");
     await saveSelectionTemplate(ctx, admin, {
       subject: f("subject"),
-      heading: f("heading"),
+      headline: f("headline"),
+      subheadline: f("subheadline"),
       body: f("body"),
-      telegramLink: f("telegramLink"),
-      rulebookLink: f("rulebookLink"),
-      websiteLink: f("websiteLink"),
+      telegramNote: f("telegramNote"),
       telegramLabel: f("telegramLabel"),
-      rulebookLabel: f("rulebookLabel"),
-      websiteLabel: f("websiteLabel"),
+      websiteCaption: f("websiteCaption"),
+      helplineEmail: f("helplineEmail"),
+      telegramLink: f("telegramLink"),
+      websiteLink: f("websiteLink"),
+      rulebookLink: f("rulebookLink"),
     });
     revalidatePath("/admin/emails");
     revalidatePath("/admin/final-selection");

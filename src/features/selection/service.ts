@@ -16,14 +16,16 @@ const D = DEFAULT_SELECTION_TEMPLATE;
 /** New fields default, so a template saved before they existed still loads. */
 export const selectionTemplateSchema = z.object({
   subject: z.string().trim().min(1, "Enter a subject.").max(300),
-  heading: z.string().trim().max(200).default(D.heading),
+  headline: z.string().trim().max(120).default(D.headline),
+  subheadline: z.string().trim().max(160).default(D.subheadline),
   body: z.string().trim().min(1, "Enter the message.").max(8000),
-  telegramLink: link("Telegram link"),
-  rulebookLink: link("Rulebook link").default(D.rulebookLink),
-  websiteLink: link("Website link").default(D.websiteLink),
+  telegramNote: z.string().trim().max(1000).default(D.telegramNote),
   telegramLabel: z.string().trim().max(60).default(D.telegramLabel),
-  rulebookLabel: z.string().trim().max(60).default(D.rulebookLabel),
-  websiteLabel: z.string().trim().max(60).default(D.websiteLabel),
+  websiteCaption: z.string().trim().max(160).default(D.websiteCaption),
+  helplineEmail: z.string().trim().max(120).refine((v) => v === "" || /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(v), "Enter a valid helpline email.").default(D.helplineEmail),
+  telegramLink: link("Telegram link"),
+  websiteLink: link("Website link").default(D.websiteLink),
+  rulebookLink: link("Rulebook link").default(D.rulebookLink),
 });
 
 export async function getSelectionTemplate(ctx: Ctx): Promise<SelectionTemplate> {
@@ -134,11 +136,10 @@ export async function finalSelection(ctx: Ctx) {
 
 export async function selectionContext(ctx: Ctx) {
   const [data, settings, tpl] = await Promise.all([finalSelection(ctx), getSettings(ctx), getSelectionTemplate(ctx)]);
-  const render = { assetBase: ctx.env.APP_URL, contactEmail: settings.contactEmail || undefined };
-  return { ...data, settings, tpl, render };
+  return { ...data, settings, tpl };
 }
 
 /** The filled-in email for one team. */
-export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate, render: { assetBase: string; contactEmail?: string }) {
-  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), render);
+export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate) {
+  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), { members: team.members.map((m) => m.fullName) });
 }

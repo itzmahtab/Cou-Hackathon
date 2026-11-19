@@ -7,11 +7,9 @@ describe("selection email template", () => {
     expect(fillTemplate("{teamName}{teamName}", { teamName: "A" })).toBe("AA");
   });
 
-  test("the default template carries the Telegram link through {telegramLink}", () => {
-    expect(DEFAULT_SELECTION_TEMPLATE.telegramLink).toBe("https://t.me/+i1nLFtZoiLkzYThl");
-    const body = fillTemplate(DEFAULT_SELECTION_TEMPLATE.body, { telegramLink: DEFAULT_TELEGRAM_LINK, teamName: "X" });
-    expect(body).toContain("https://t.me/+i1nLFtZoiLkzYThl");
-    expect(body).not.toContain("{telegramLink}");
+  test("the default template uses the Telegram group link", () => {
+    expect(DEFAULT_SELECTION_TEMPLATE.telegramLink).toBe(DEFAULT_TELEGRAM_LINK);
+    expect(DEFAULT_TELEGRAM_LINK).toBe("https://t.me/+i1nLFtZoiLkzYThl");
   });
 
   test("joins names naturally", () => {
@@ -37,41 +35,49 @@ describe("selection email template", () => {
   });
 });
 
-describe("formatted selection email", () => {
-  const vars = { teamName: "Twin <logic> & co", registrationId: "COU26-2572E1", memberNames: "A and B", eventDate: "24 November 2026", venue: "Comilla University", feeBdt: "1345", paymentDeadline: "22 Nov 2026, 23:59", ideaTitle: "PoraBondhu" };
-  const opts = { assetBase: "https://coutechnova.xyz/", contactEmail: "team@coutechnova.xyz" };
+describe("formatted selection email (TECHNOVA design)", () => {
+  const vars = { teamName: "Twin <logic> & co", registrationId: "COU26-2572E1", memberNames: "A and B" };
 
-  test("default template: banner, Telegram 'click here' hyperlink, buttons, facts and footer", () => {
-    const m = renderSelectionEmail(DEFAULT_SELECTION_TEMPLATE, vars, opts);
-    expect(m.subject).toBe("Congratulations Twin <logic> & co! You are selected for the CoU AI Hackathon 2026 final");
-    expect(m.fragment).toContain('src="https://coutechnova.xyz/email/header.jpg"');
-    expect(m.fragment).toMatch(/<a href="https:\/\/t\.me\/\+i1nLFtZoiLkzYThl"[^>]*>Click here<\/a>/);
-    expect(m.fragment).toContain('href="https://coutechnova.xyz/rulebook.pdf"');
-    expect(m.fragment).toContain(">Join Telegram channel<");
+  test("default design: header, headline, team card with every member, Telegram button, website, helpline, footer", () => {
+    const m = renderSelectionEmail(DEFAULT_SELECTION_TEMPLATE, vars, { members: ["Md Yak Safu", "Munny Rahaman Dristy"] });
+    expect(m.subject).toBe("Congratulations! You are selected | CoU TECHNOVA 2026");
+    expect(m.fragment).toContain("CoU TECHNOVA 2026");
+    expect(m.fragment).toContain("CONGRATULATIONS!");
+    expect(m.fragment).toContain("YOUR TEAM IS IN THE TOP 40 · AI HACKATHON");
+    expect(m.fragment).toContain('<b style="color:#ffa530">selected for the Final Round</b>');
     expect(m.fragment).toContain("Twin &lt;logic&gt; &amp; co"); // team data is escaped
-    expect(m.fragment).toContain("mailto:team@coutechnova.xyz");
-    expect(m.fragment).toContain("<ol ");
-    expect(m.fragment).not.toContain("{");
-    expect(m.html.startsWith("<!doctype html>")).toBe(true);
-    expect(m.text).toContain("Click here (https://t.me/+i1nLFtZoiLkzYThl)");
+    expect(m.fragment).toContain("1. Md Yak Safu<br>2. Munny Rahaman Dristy");
+    expect(m.fragment).not.toContain("3. ");
+    expect(m.fragment).toMatch(/<a href="https:\/\/t\.me\/\+i1nLFtZoiLkzYThl"[^>]*>✈️ JOIN TELEGRAM GROUP<\/a>/);
+    expect(m.fragment).toContain('href="https://coutechnova.xyz"');
+    expect(m.fragment).toContain(">coutechnova.xyz<");
+    expect(m.fragment).toContain('href="mailto:coutechnova2026@gmail.com"');
+    expect(m.fragment).toContain("INNOVATE. <span");
+    expect(m.fragment).not.toMatch(/\{\w+\}|\{\{/);
+    expect(m.html.startsWith("<!DOCTYPE html>")).toBe(true);
+    expect(m.text).toContain("TEAM MEMBERS:\n1. Md Yak Safu\n2. Munny Rahaman Dristy");
+    expect(m.text).toContain("✈️ JOIN TELEGRAM GROUP: https://t.me/+i1nLFtZoiLkzYThl");
     expect(m.text).not.toContain("**");
   });
 
-  test("typed markup is shown as text and unsafe links are dropped", () => {
-    const tpl = { ...DEFAULT_SELECTION_TEMPLATE, body: "<script>alert(1)</script>\n[bad](javascript:alert(1)) and [ok](https://example.com)\n- **one**\n- two" };
-    const m = renderSelectionEmail(tpl, vars, opts);
+  test("typed markup is shown as text, unsafe links are dropped, empty sections disappear", () => {
+    const tpl = { ...DEFAULT_SELECTION_TEMPLATE, body: "<script>alert(1)</script>\n[bad](javascript:alert(1)) and [ok](https://example.com)\n- **one**\n- two", helplineEmail: "", subheadline: "" };
+    const m = renderSelectionEmail(tpl, vars, { members: [] });
     expect(m.fragment).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(m.fragment).not.toContain("<script>");
     expect(m.fragment).not.toContain("javascript:");
     expect(m.fragment).toContain('href="https://example.com"');
-    expect(m.fragment).toMatch(/<ul [^>]*><li[^>]*><strong>one<\/strong><\/li><li[^>]*>two<\/li><\/ul>/);
+    expect(m.fragment).toMatch(/<ul [^>]*><li[^>]*><b [^>]*>one<\/b><\/li><li[^>]*>two<\/li><\/ul>/);
+    expect(m.fragment).not.toContain("Need help?");
+    expect(m.fragment).not.toContain("TEAM MEMBERS");
     expect(safeUrl("javascript:alert(1)")).toBeNull();
     expect(safeUrl("https://t.me/+x")).toBe("https://t.me/+x");
   });
 
   test("team values containing formatting characters are not interpreted", () => {
-    const m = renderSelectionEmail({ ...DEFAULT_SELECTION_TEMPLATE, body: "Team {teamName}" }, { teamName: "**x** [y](https://evil.test)" }, opts);
+    const m = renderSelectionEmail({ ...DEFAULT_SELECTION_TEMPLATE, body: "Team {teamName}" }, { teamName: "**x** [y](https://evil.test)" }, { members: ["<b>z</b>"] });
     expect(m.fragment).toContain("Team **x** [y](https://evil.test)");
     expect(m.fragment).not.toContain('href="https://evil.test"');
+    expect(m.fragment).toContain("1. &lt;b&gt;z&lt;/b&gt;");
   });
 });

@@ -64,6 +64,6 @@ describe("saved template upgrade", () => {
   test("a template saved with only the old fields gets the new fields from the defaults", async () => {
     await saveSelectionTemplate(t.ctx, superAdmin, { subject: "Old", body: "Old body", telegramLink: "https://t.me/+i1nLFtZoiLkzYThl" });
     const tpl = await getSelectionTemplate(t.ctx);
-    expect(tpl).toMatchObject({ subject: "Old", body: "Old body", rulebookLink: DEFAULT_SELECTION_TEMPLATE.rulebookLink, websiteLabel: DEFAULT_SELECTION_TEMPLATE.websiteLabel });
+    expect(tpl).toMatchObject({ subject: "Old", body: "Old body", rulebookLink: DEFAULT_SELECTION_TEMPLATE.rulebookLink, helplineEmail: DEFAULT_SELECTION_TEMPLATE.helplineEmail, headline: DEFAULT_SELECTION_TEMPLATE.headline });
   });
 });
