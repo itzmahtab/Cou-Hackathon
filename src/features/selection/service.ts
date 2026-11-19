@@ -1,10 +1,11 @@
-import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Ctx } from "@/lib/ctx";
 import { activityRow } from "@/lib/auth/session";
-import { adminActivityLogs, eventSettings, ideaSubmissions, participants, shortlistSelections, teams, type Admin } from "@/lib/db/schema";
+import { adminActivityLogs, emailOutbox, eventSettings, ideaSubmissions, participants, shortlistSelections, teams, type Admin } from "@/lib/db/schema";
 import { getSettings, type Settings } from "@/lib/settings";
 import { formatDhaka, formatDhakaDate } from "@/lib/time";
+import { enqueue, type OutboxEntry } from "../email/outbox";
 import { DEFAULT_SELECTION_TEMPLATE, joinNames, renderSelectionEmail, safeUrl, type SelectionTemplate, type TemplateVars } from "./template";
 
 const TEMPLATE_KEY = "selectionEmailTemplate";
@@ -16,14 +17,16 @@ const D = DEFAULT_SELECTION_TEMPLATE;
 /** New fields default, so a template saved before they existed still loads. */
 export const selectionTemplateSchema = z.object({
   subject: z.string().trim().min(1, "Enter a subject.").max(300),
-  heading: z.string().trim().max(200).default(D.heading),
+  headline: z.string().trim().max(120).default(D.headline),
+  subheadline: z.string().trim().max(160).default(D.subheadline),
   body: z.string().trim().min(1, "Enter the message.").max(8000),
-  telegramLink: link("Telegram link"),
-  rulebookLink: link("Rulebook link").default(D.rulebookLink),
-  websiteLink: link("Website link").default(D.websiteLink),
+  telegramNote: z.string().trim().max(1000).default(D.telegramNote),
   telegramLabel: z.string().trim().max(60).default(D.telegramLabel),
-  rulebookLabel: z.string().trim().max(60).default(D.rulebookLabel),
-  websiteLabel: z.string().trim().max(60).default(D.websiteLabel),
+  websiteCaption: z.string().trim().max(160).default(D.websiteCaption),
+  helplineEmail: z.string().trim().max(120).refine((v) => v === "" || /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(v), "Enter a valid helpline email.").default(D.helplineEmail),
+  telegramLink: link("Telegram link"),
+  websiteLink: link("Website link").default(D.websiteLink),
+  rulebookLink: link("Rulebook link").default(D.rulebookLink),
 });
 
 export async function getSelectionTemplate(ctx: Ctx): Promise<SelectionTemplate> {
@@ -134,11 +137,59 @@ export async function finalSelection(ctx: Ctx) {
 
 export async function selectionContext(ctx: Ctx) {
   const [data, settings, tpl] = await Promise.all([finalSelection(ctx), getSettings(ctx), getSelectionTemplate(ctx)]);
-  const render = { assetBase: ctx.env.APP_URL, contactEmail: settings.contactEmail || undefined };
-  return { ...data, settings, tpl, render };
+  return { ...data, settings, tpl };
 }
 
 /** The filled-in email for one team. */
-export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate, render: { assetBase: string; contactEmail?: string }) {
-  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), render);
+export function renderForTeam(team: SelectionTeam, settings: Settings, tpl: SelectionTemplate) {
+  return renderSelectionEmail(tpl, templateVars(team, settings, tpl), { members: team.members.map((m) => m.fullName) });
+}
+
+/* ------------------------------------------------------------------ */
+/* Sending to every selected team (only when an admin presses the button) */
+/* ------------------------------------------------------------------ */
+
+const SEND_TEMPLATE = "final_selection" as const;
+
+/** How many selection emails exist per status, plus how many selected participants have none yet. */
+export async function selectionSendStatus(ctx: Ctx) {
+  const { selected } = await finalSelection(ctx);
+  const participants = selected.reduce((n, t) => n + t.members.length, 0);
+  const rows = await ctx.db
+    .select({ status: emailOutbox.status, n: sql<number>`count(*)` })
+    .from(emailOutbox)
+    .where(eq(emailOutbox.template, SEND_TEMPLATE))
+    .groupBy(emailOutbox.status);
+  const byStatus = Object.fromEntries(rows.map((r) => [r.status, r.n])) as Record<string, number>;
+  const total = Object.values(byStatus).reduce((a, b) => a + b, 0);
+  return { teams: selected.length, participants, byStatus, total };
+}
+
+/**
+ * Queues one personalised selection email per member of every selected team, from the
+ * portal's sender (EMAIL_FROM). Each member gets it at most once, however often this runs.
+ */
+export async function sendSelectionEmails(ctx: Ctx, admin: Admin) {
+  const { selected, settings, tpl } = await selectionContext(ctx);
+  const entries: OutboxEntry[] = [];
+  for (const team of selected) {
+    // Rendered by the "final_selection" email template when sent, through the same escaping renderer.
+    const payload = { tpl, vars: templateVars(team, settings, tpl), members: team.members.map((m) => m.fullName) };
+    for (const m of team.members) {
+      entries.push({
+        template: SEND_TEMPLATE,
+        to: m.email,
+        dedupe: `${team.id}:${m.email.toLowerCase()}`,
+        teamId: team.id,
+        payload,
+        requestedBy: admin.id,
+      });
+    }
+  }
+  const before = (await ctx.db.select({ n: sql<number>`count(*)` }).from(emailOutbox).where(eq(emailOutbox.template, SEND_TEMPLATE)))[0]?.n ?? 0;
+  await enqueue(ctx, entries);
+  const after = (await ctx.db.select({ n: sql<number>`count(*)` }).from(emailOutbox).where(eq(emailOutbox.template, SEND_TEMPLATE)))[0]?.n ?? 0;
+  const queued = after - before;
+  await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.final_selection", detail: { teams: selected.length, recipients: entries.length, queued } }));
+  return { teams: selected.length, recipients: entries.length, queued, skipped: entries.length - queued };
 }

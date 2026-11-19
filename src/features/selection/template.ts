@@ -1,54 +1,49 @@
 /**
- * The selection email that organisers send by hand. Pure functions only, so the
- * same code renders it on the server (preview page) and in the browser (editor).
+ * The selection email that organisers send by hand, in the CoU TECHNOVA 2026 design
+ * (dark card, orange accents). Pure functions only, so the same code renders it on
+ * the server (preview page) and in the browser (editor).
  *
- * The body uses a tiny, safe formatting syntax:
+ * Text fields use a tiny, safe formatting syntax:
  *   blank line        new paragraph
  *   1. / -            numbered / bulleted list item
- *   **bold**          bold
+ *   **bold**          bold (orange)
  *   [text](url)       link; the url may be a placeholder such as {telegramLink}
  * Everything typed is HTML-escaped, and only http(s), mailto and tel links are kept.
  */
 
 export const DEFAULT_TELEGRAM_LINK = "https://t.me/+i1nLFtZoiLkzYThl";
 export const DEFAULT_WEBSITE = "https://coutechnova.xyz";
+export const DEFAULT_HELPLINE_EMAIL = "coutechnova2026@gmail.com";
 
 export interface SelectionTemplate {
   subject: string;
-  heading: string;
+  headline: string;
+  subheadline: string;
   body: string;
-  telegramLink: string;
-  rulebookLink: string;
-  websiteLink: string;
+  telegramNote: string;
   telegramLabel: string;
-  rulebookLabel: string;
-  websiteLabel: string;
+  websiteCaption: string;
+  helplineEmail: string;
+  telegramLink: string;
+  websiteLink: string;
+  rulebookLink: string;
 }
 
 export const DEFAULT_SELECTION_TEMPLATE: SelectionTemplate = {
-  subject: "Congratulations {teamName}! You are selected for the CoU AI Hackathon 2026 final",
-  heading: "You're in the final, {teamName}! 🎉",
-  body: `Dear {memberNames},
+  subject: "Congratulations! You are selected | CoU TECHNOVA 2026",
+  headline: "CONGRATULATIONS!",
+  subheadline: "YOUR TEAM IS IN THE TOP 40 · AI HACKATHON",
+  body: `Dear Participants,
 
-Congratulations! Your team **{teamName}** (Registration ID: **{registrationId}**) has been selected for the final round of the **CoU AI Hackathon 2026** with your idea "{ideaTitle}".
-
-**Next steps**
-1. **[Click here]({telegramLink})** to join our official Telegram channel. All announcements, schedules and updates will be shared there.
-2. Confirm your place by paying the participation fee of **BDT {feeBdt}** through the [hackathon portal]({websiteLink}) by **{paymentDeadline}**.
-3. Read the **[rulebook]({rulebookLink})** carefully before the pre-build period starts.
-4. The on-site final takes place on **{eventDate}** at {venue}.
-
-If you have any questions, reply to this email or ask in the Telegram channel.
-
-Best regards,
-**CoU AI Hackathon 2026 Organising Committee**
-Faculty of Engineering, Comilla University`,
+We are delighted to inform you that your team has been **selected for the Final Round** of the AI Hackathon at CoU TECHNOVA 2026, after a competitive evaluation of Phase 1 submissions.`,
+  telegramNote: `**Please join our official Telegram group now.**
+Confirmation, payment instructions and all next steps will be shared there.`,
+  telegramLabel: "✈️ JOIN TELEGRAM GROUP",
+  websiteCaption: "Rules, schedule, FAQ and help",
+  helplineEmail: DEFAULT_HELPLINE_EMAIL,
   telegramLink: DEFAULT_TELEGRAM_LINK,
-  rulebookLink: `${DEFAULT_WEBSITE}/rulebook.pdf`,
   websiteLink: DEFAULT_WEBSITE,
-  telegramLabel: "Join Telegram channel",
-  rulebookLabel: "Read the rulebook",
-  websiteLabel: "Visit website",
+  rulebookLink: `${DEFAULT_WEBSITE}/rulebook.pdf`,
 };
 
 export const PLACEHOLDERS = {
@@ -57,7 +52,7 @@ export const PLACEHOLDERS = {
   ideaTitle: "Idea title",
   leaderName: "Team leader's name",
   memberNames: "All member names",
-  telegramLink: "Telegram channel link",
+  telegramLink: "Telegram group link",
   rulebookLink: "Rulebook link",
   websiteLink: "Website link",
   feeBdt: "Participation fee",
@@ -115,20 +110,21 @@ export function safeUrl(url: string): string | null {
 }
 
 const INLINE = /\[([^\]\n]+)\]\(([^)\s]+)\)|\*\*([^*\n]+?)\*\*/g;
-const LINK_STYLE = "color:#6d28d9;font-weight:600;text-decoration:underline";
+const LINK_STYLE = "color:#ffa530;font-weight:bold;text-decoration:underline";
+const BOLD_STYLE = "color:#ffa530";
 
 /** Formats one line. Formatting is read from the template before placeholders are filled, so team data can never inject markup. */
-function inlineHtml(src: string, vars: Partial<TemplateVars>): string {
+function inlineHtml(src: string, vars: Partial<TemplateVars>, boldStyle = BOLD_STYLE): string {
   let out = "";
   let last = 0;
   for (const m of src.matchAll(INLINE)) {
     out += escapeHtml(fillTemplate(src.slice(last, m.index), vars));
     if (m[1] !== undefined) {
       const url = safeUrl(fillTemplate(m[2], vars));
-      const label = inlineHtml(m[1], vars);
+      const label = inlineHtml(m[1], vars, boldStyle);
       out += url ? `<a href="${escapeHtml(url)}" style="${LINK_STYLE}" target="_blank">${label}</a>` : label;
     } else {
-      out += `<strong>${inlineHtml(m[3], vars)}</strong>`;
+      out += `<b style="${boldStyle}">${inlineHtml(m[3], vars, boldStyle)}</b>`;
     }
     last = (m.index ?? 0) + m[0].length;
   }
@@ -166,9 +162,8 @@ function blocks(body: string): Block[] {
 }
 
 export interface RenderOptions {
-  /** Origin that serves /email/header.jpg, e.g. https://coutechnova.xyz */
-  assetBase: string;
-  contactEmail?: string;
+  /** The team's member names, in order (team card). */
+  members?: string[];
 }
 
 export interface RenderedSelectionEmail {
@@ -180,84 +175,129 @@ export interface RenderedSelectionEmail {
   text: string;
 }
 
-export function renderSelectionEmail(tpl: SelectionTemplate, vars: Partial<TemplateVars>, opts: RenderOptions): RenderedSelectionEmail {
+/** Paragraphs and lists of one text field, in the email's light-on-dark style. */
+function richHtml(src: string, v: Partial<TemplateVars>, gapPx = 14, boldStyle = BOLD_STYLE): string {
+  const bs = blocks(src);
+  return bs
+    .map((b, i) => {
+      const gap = i === bs.length - 1 ? "0" : `${gapPx}px`;
+      if (b.kind === "p") return `<p style="margin:0 0 ${gap}">${b.lines.map((l) => inlineHtml(l, v, boldStyle)).join("<br>")}</p>`;
+      return `<${b.kind} style="margin:0 0 ${gap};padding-left:22px">${b.items.map((it) => `<li style="margin:0 0 6px">${inlineHtml(it, v, boldStyle)}</li>`).join("")}</${b.kind}>`;
+    })
+    .join("");
+}
+
+function richText(src: string, v: Partial<TemplateVars>): string[] {
+  return blocks(src).flatMap((b) => (b.kind === "p" ? [...b.lines.map((l) => inlineText(l, v)), ""] : [...b.items.map((it, i) => `${b.kind === "ol" ? `${i + 1}.` : "-"} ${inlineText(it, v)}`), ""]));
+}
+
+export function renderSelectionEmail(tpl: SelectionTemplate, vars: Partial<TemplateVars>, opts: RenderOptions = {}): RenderedSelectionEmail {
   // Links always come from the template, so editing them updates every placeholder that uses them.
   const v: Partial<TemplateVars> = { ...vars, telegramLink: tpl.telegramLink, rulebookLink: tpl.rulebookLink, websiteLink: tpl.websiteLink };
   const e = escapeHtml;
-  const subject = fillTemplate(tpl.subject, v);
-  const heading = fillTemplate(tpl.heading, v);
-  const base = opts.assetBase.replace(/\/+$/, "");
-  const site = safeUrl(tpl.websiteLink) ?? base;
-  const body = blocks(tpl.body)
-    .map((b) => {
-      if (b.kind === "p") return `<p style="margin:0 0 16px">${b.lines.map((l) => inlineHtml(l, v)).join("<br>")}</p>`;
-      const tag = b.kind;
-      return `<${tag} style="margin:0 0 18px;padding-left:22px">${b.items.map((i) => `<li style="margin:0 0 8px">${inlineHtml(i, v)}</li>`).join("")}</${tag}>`;
-    })
-    .join("\n");
+  const f = (t: string) => fillTemplate(t, v);
+  const subject = f(tpl.subject);
+  const members = (opts.members ?? []).filter((m) => m.trim());
+  const telegram = safeUrl(tpl.telegramLink);
+  const site = safeUrl(tpl.websiteLink);
+  const siteLabel = (site ?? "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const helpline = tpl.helplineEmail.trim();
+  const helplineUrl = helpline ? safeUrl(`mailto:${helpline}`) : null;
 
-  const buttons = [
-    { url: safeUrl(tpl.telegramLink), label: tpl.telegramLabel, bg: "#229ED9" },
-    { url: safeUrl(tpl.rulebookLink), label: tpl.rulebookLabel, bg: "#7c3aed" },
-    { url: safeUrl(tpl.websiteLink), label: tpl.websiteLabel, bg: "#0f172a" },
-  ].filter((b) => b.url && b.label.trim());
-  const buttonRow = buttons.length
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px"><tr>${buttons
-        .map(
-          (b) =>
-            `<td style="padding:0 8px 8px 0"><a href="${e(b.url)}" target="_blank" style="display:inline-block;background:${b.bg};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 18px;border-radius:10px">${e(fillTemplate(b.label, v))}</a></td>`,
-        )
-        .join("")}</tr></table>`
-    : "";
+  const teamCard = `<tr><td style="padding:14px 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1d0f05;border:1px solid #ff8a00;border-radius:12px;">
+<tr><td style="padding:18px 20px;">
+<div style="font-size:12px;letter-spacing:3px;color:#ff9a1f;font-weight:bold;">TEAM NAME</div>
+<div style="font-size:24px;color:#ffffff;font-weight:bold;margin:4px 0 14px;">${e(v.teamName ?? "")}</div>
+${
+  members.length
+    ? `<div style="font-size:12px;letter-spacing:3px;color:#ff9a1f;font-weight:bold;">TEAM MEMBERS</div>
+<div style="font-size:15px;color:#ffffff;line-height:26px;margin-top:4px;">
+${members.map((m, i) => `${i + 1}. ${e(m)}`).join("<br>")}
+</div>`
+    : ""
+}
+</td></tr></table>
+</td></tr>`;
 
-  const facts: [string, string | undefined][] = [
-    ["Team", v.teamName],
-    ["Registration ID", v.registrationId],
-    ["Final", v.eventDate],
-    ["Venue", v.venue],
-  ];
-  const factsBox = `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:4px 0 8px;border:1px solid #e5e7eb;border-radius:10px;border-collapse:separate">${facts
-    .filter(([, val]) => val)
-    .map(([k, val]) => `<tr><td style="padding:10px 14px;color:#64748b;font-size:13px;width:36%;border-bottom:1px solid #f1f5f9">${e(k)}</td><td style="padding:10px 14px;color:#0f172a;font-size:14px;font-weight:600;border-bottom:1px solid #f1f5f9">${e(val)}</td></tr>`)
-    .join("")}</table>`;
+  const fragment = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0b0603" style="background:#0b0603;font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#120a04;border:1px solid #ff8a00;border-radius:16px;overflow:hidden;">
 
-  const footerLinks = [
-    [tpl.websiteLink, "Website"],
-    [tpl.telegramLink, "Telegram"],
-    [tpl.rulebookLink, "Rulebook"],
-    ...(opts.contactEmail ? [[`mailto:${opts.contactEmail}`, opts.contactEmail]] : []),
-  ]
-    .map(([u, l]) => (safeUrl(u) ? `<a href="${e(u)}" target="_blank" style="color:#a78bfa;text-decoration:none">${e(l)}</a>` : ""))
-    .filter(Boolean)
-    .join(' <span style="color:#475569">·</span> ');
-
-  const fragment = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
-<tr><td style="background:#0b0820;padding:0"><a href="${e(site)}" target="_blank"><img src="${e(base)}/email/header.jpg" width="600" alt="CoU AI Hackathon 2026 · Presented by GIGABYTE AORUS · Powered by IT Palace" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a></td></tr>
-<tr><td style="padding:30px 30px 8px;color:#0f172a;font-size:15px;line-height:1.65">
-<h1 style="font-size:23px;line-height:1.3;margin:0 0 18px;color:#0f172a">${e(heading)}</h1>
-${body}
-${buttonRow}
-${factsBox}
+<tr><td align="center" bgcolor="#ff8a00" style="background:#ff8a00;background:linear-gradient(90deg,#ff7a00,#ffb347);padding:26px 20px;">
+<div style="font-size:12px;letter-spacing:4px;color:#2a1300;font-weight:bold;">FACULTY OF ENGINEERING PRESENTS</div>
+<div style="font-size:30px;font-weight:bold;color:#1a0d00;margin-top:6px;letter-spacing:1px;">CoU TECHNOVA 2026</div>
+<div style="font-size:12px;letter-spacing:3px;color:#2a1300;margin-top:4px;">AI &amp; TECHNOLOGY CARNIVAL</div>
 </td></tr>
-<tr><td style="background:#0b0820;padding:20px 30px;color:#cbd5e1;font-size:12px;line-height:1.7">
-<div style="color:#ffffff;font-weight:600;font-size:13px">CoU AI Hackathon 2026 · CoU Technova 2026</div>
-<div>Faculty of Engineering, Comilla University, Cumilla, Bangladesh</div>
-<div style="margin-top:6px">${footerLinks}</div>
-<div style="margin-top:6px;color:#94a3b8">Five Hours. One Vision. Infinite Possibilities.</div>
+
+<tr><td align="center" style="padding:36px 28px 10px;">
+<div style="font-size:44px;line-height:1;">🎉</div>
+<div style="font-size:30px;font-weight:bold;color:#ffffff;margin-top:12px;">${e(f(tpl.headline))}</div>
+${tpl.subheadline.trim() ? `<div style="font-size:16px;color:#ffa530;margin-top:8px;letter-spacing:1px;font-weight:bold;">${e(f(tpl.subheadline))}</div>` : ""}
 </td></tr>
+
+<tr><td style="padding:18px 32px 6px;color:#d9d9d9;font-size:15px;line-height:24px;">
+${richHtml(tpl.body, v, 24)}
+</td></tr>
+
+${teamCard}
+
+${
+  telegram
+    ? `<tr><td align="center" style="padding:24px 32px 8px;">
+<div style="font-size:14px;color:#d9d9d9;margin-bottom:12px;line-height:21px;">${richHtml(tpl.telegramNote, v, 8, "color:#ffffff")}</div>
+<a href="${e(telegram)}" target="_blank" style="display:inline-block;background:#ff8a00;background:linear-gradient(90deg,#ff7a00,#ffae4a);color:#1a0d00;font-weight:bold;font-size:17px;letter-spacing:1px;text-decoration:none;padding:15px 38px;border-radius:40px;">${e(f(tpl.telegramLabel))}</a>
+</td></tr>`
+    : ""
+}
+
+${
+  site
+    ? `<tr><td align="center" style="padding:20px 32px 6px;">
+<a href="${e(site)}" target="_blank" style="color:#ffa530;font-size:15px;font-weight:bold;text-decoration:none;">${e(siteLabel)}</a>
+${tpl.websiteCaption.trim() ? `<div style="font-size:13px;color:#a8a8a8;margin-top:6px;">${e(f(tpl.websiteCaption))}</div>` : ""}
+</td></tr>`
+    : ""
+}
+
+${
+  helplineUrl
+    ? `<tr><td align="center" style="padding:18px 32px 24px;">
+<div style="border-top:1px solid #2a1a0d;padding-top:16px;font-size:14px;color:#d9d9d9;line-height:22px;">
+Need help? Contact our helpline:<br>
+<a href="${e(helplineUrl)}" style="color:#ffa530;font-weight:bold;text-decoration:none;">${e(helpline)}</a>
+</div></td></tr>`
+    : ""
+}
+
+<tr><td align="center" bgcolor="#0b0603" style="background:#0b0603;padding:18px;font-size:12px;color:#8a8a8a;line-height:20px;">
+<b style="color:#ffffff;letter-spacing:2px;">INNOVATE. <span style="color:#ffa530;">CREATE.</span> COMPETE.</b><br>
+Organized by the Faculty of Engineering, Comilla University<br>
+Title Sponsor: Gigabyte AORUS · Powered by IT Palace
+</td></tr>
+
 </table></td></tr></table>`;
 
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(subject)}</title></head><body style="margin:0;background:#f1f5f9">${fragment}</body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(subject)}</title></head>
+<body style="margin:0;padding:0;background:#0b0603;font-family:Arial,Helvetica,sans-serif;">${fragment}</body></html>`;
 
   const text = [
-    heading,
+    "CoU TECHNOVA 2026 · AI & TECHNOLOGY CARNIVAL",
     "",
-    ...blocks(tpl.body).flatMap((b) =>
-      b.kind === "p" ? [...b.lines.map((l) => inlineText(l, v)), ""] : [...b.items.map((it, i) => `${b.kind === "ol" ? `${i + 1}.` : "-"} ${inlineText(it, v)}`), ""],
-    ),
-    ...buttons.map((b) => `${fillTemplate(b.label, v)}: ${b.url}`),
+    f(tpl.headline),
+    f(tpl.subheadline),
+    "",
+    ...richText(tpl.body, v),
+    `TEAM NAME: ${v.teamName ?? ""}`,
+    ...(members.length ? ["TEAM MEMBERS:", ...members.map((m, i) => `${i + 1}. ${m}`)] : []),
+    "",
+    ...(telegram ? [...richText(tpl.telegramNote, v), `${f(tpl.telegramLabel)}: ${telegram}`, ""] : []),
+    ...(site ? [`${siteLabel}${tpl.websiteCaption.trim() ? ` · ${f(tpl.websiteCaption)}` : ""}: ${site}`, ""] : []),
+    ...(helpline ? [`Need help? Contact our helpline: ${helpline}`, ""] : []),
+    "INNOVATE. CREATE. COMPETE.",
+    "Organized by the Faculty of Engineering, Comilla University",
+    "Title Sponsor: Gigabyte AORUS · Powered by IT Palace",
   ]
+    .filter((l) => l !== undefined)
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();

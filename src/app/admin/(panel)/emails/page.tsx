@@ -1,9 +1,10 @@
 import { and, desc, eq, like, sql, type SQL } from "drizzle-orm";
 import { drainNowAction, resendEmailAction, testEmailAction } from "@/app/admin/actions/results";
-import { saveSelectionTemplateAction } from "@/app/admin/actions/selection";
+import { saveSelectionTemplateAction, sendSelectionEmailsAction } from "@/app/admin/actions/selection";
 import { ActionForm } from "@/components/admin/action-form";
 import { SelectionTemplateEditor } from "@/components/admin/selection-template-editor";
-import { selectionContext, templateVars } from "@/features/selection/service";
+import { selectionContext, selectionSendStatus, templateVars } from "@/features/selection/service";
+import { can } from "@/lib/auth/permissions";
 import { AdminHeader, Empty, Section, StatusBadge } from "@/components/admin/ui";
 import { smtpPasswordSource } from "@/features/email/config";
 import { TEMPLATE_LABELS, type TemplateName } from "@/features/email/templates";
@@ -15,7 +16,7 @@ import { formatDhaka } from "@/lib/time";
 export const metadata = { title: "Emails" };
 
 export default async function Emails({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const { ctx } = await requireAdminPage("emails.manage");
+  const { ctx, admin } = await requireAdminPage("emails.manage");
   const sp = await searchParams;
   const where: SQL[] = [];
   if (sp.status) where.push(eq(emailOutbox.status, sp.status as never));
@@ -32,9 +33,9 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
     ctx.db.select({ status: emailOutbox.status, n: sql<number>`count(*)` }).from(emailOutbox).groupBy(emailOutbox.status),
   ]);
   const count = Object.fromEntries(counts.map((c) => [c.status, c.n]));
-  const sel = await selectionContext(ctx);
+  const [sel, sendStatus] = await Promise.all([selectionContext(ctx), selectionSendStatus(ctx)]);
   const sampleTeam = sel.selected[0] ?? null;
-  const sample = sampleTeam ? { ...templateVars(sampleTeam, sel.settings, sel.tpl), label: `filled in for ${sampleTeam.name}` } : null;
+  const sample = sampleTeam ? { vars: templateVars(sampleTeam, sel.settings, sel.tpl), members: sampleTeam.members.map((m) => m.fullName), label: `filled in for ${sampleTeam.name}` } : null;
   const provider = ctx.env.EMAIL_PROVIDER;
   const smtpSource = await smtpPasswordSource(ctx);
 
@@ -50,11 +51,44 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
           </div>
         }
       />
-      <Section title="Selection email template (sent by hand)" className="mb-6">
-        <p className="mb-4 text-sm text-muted">
-          Design the email for the selected teams: banner, message, clickable links and buttons. Saving does not send anything. Send it by hand from Final selection (Gmail, then Copy formatted email, then paste).
+      <Section title="Send the selection email to all selected teams" className="mb-6 border-warning/40">
+        <p className="mb-3 text-sm text-muted">
+          Sends the template below, personalised for each team (team name and members), to <strong>every member</strong> of the{" "}
+          <strong>{sendStatus.teams} selected teams</strong> ({sendStatus.participants} people), from <strong>{ctx.env.EMAIL_FROM ?? ctx.env.SMTP_USER}</strong>. Waiting and rejected teams are not emailed. Each person
+          gets it once: pressing again only emails members who have not had it yet.
         </p>
-        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} render={sel.render} canEdit />
+        <p className="mb-4 text-sm">
+          Status:{" "}
+          {sendStatus.total === 0 ? (
+            <span className="text-muted">not sent yet.</span>
+          ) : (
+            <span>
+              {sendStatus.byStatus.SENT ?? 0} sent · {sendStatus.byStatus.QUEUED ?? 0} queued · {sendStatus.byStatus.DEAD ?? 0} failed (of {sendStatus.total}). Emails go out about 10 per minute.
+            </span>
+          )}
+        </p>
+        {can(admin.role, "emails.broadcast") ? (
+          sendStatus.teams > 0 && (
+            <ActionForm
+              action={sendSelectionEmailsAction}
+              submitLabel={`Send to all ${sendStatus.teams} teams (${sendStatus.participants} emails)`}
+              submitClass="btn-danger"
+              confirm={`Email the selection message to all ${sendStatus.participants} members of the ${sendStatus.teams} selected teams now? Save any template changes first.`}
+              confirmPhrase="SEND"
+            >
+              <input type="hidden" name="confirm" value="SEND" />
+            </ActionForm>
+          )
+        ) : (
+          <p className="text-sm text-muted">Only a super admin can send this.</p>
+        )}
+      </Section>
+
+      <Section title="Selection email template" className="mb-6">
+        <p className="mb-4 text-sm text-muted">
+          Edit the email for the selected teams (CoU TECHNOVA design: team card, Telegram button, helpline). Saving does not send anything. Send it to everyone with the button above, or to one team by hand from Final selection.
+        </p>
+        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} canEdit />
       </Section>
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <input name="q" defaultValue={sp.q} placeholder="Recipient email" aria-label="Recipient" className="input min-w-56 flex-1" />

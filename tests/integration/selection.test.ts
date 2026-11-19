@@ -64,6 +64,37 @@ describe("saved template upgrade", () => {
   test("a template saved with only the old fields gets the new fields from the defaults", async () => {
     await saveSelectionTemplate(t.ctx, superAdmin, { subject: "Old", body: "Old body", telegramLink: "https://t.me/+i1nLFtZoiLkzYThl" });
     const tpl = await getSelectionTemplate(t.ctx);
-    expect(tpl).toMatchObject({ subject: "Old", body: "Old body", rulebookLink: DEFAULT_SELECTION_TEMPLATE.rulebookLink, websiteLabel: DEFAULT_SELECTION_TEMPLATE.websiteLabel });
+    expect(tpl).toMatchObject({ subject: "Old", body: "Old body", rulebookLink: DEFAULT_SELECTION_TEMPLATE.rulebookLink, helplineEmail: DEFAULT_SELECTION_TEMPLATE.helplineEmail, headline: DEFAULT_SELECTION_TEMPLATE.headline });
+  });
+});
+
+describe("send to all selected teams", () => {
+  test("queues one email per member of the selected teams only, once; it renders and sends", async () => {
+    const { sendSelectionEmails, selectionSendStatus, finalSelection: fs } = await import("@/features/selection/service");
+    const { drainOutbox } = await import("@/features/email/outbox");
+    const { selected, waiting, rejected } = await fs(t.ctx);
+    const expected = selected.reduce((n, x) => n + x.members.length, 0);
+    const before = (await t.ctx.db.select().from(emailOutbox)).length;
+
+    const first = await sendSelectionEmails(t.ctx, superAdmin);
+    expect(first).toMatchObject({ teams: selected.length, recipients: expected, queued: expected, skipped: 0 });
+    const rows = (await t.ctx.db.select().from(emailOutbox)).filter((r) => r.template === "final_selection");
+    expect(rows).toHaveLength(expected);
+    expect(new Set(rows.map((r) => r.toEmail))).toEqual(new Set(selected.flatMap((x) => x.members.map((m) => m.email))));
+    const notSelected = new Set([...waiting, ...rejected].map((x) => x.id));
+    expect(rows.some((r) => r.teamId && notSelected.has(r.teamId))).toBe(false);
+    const { renderEmail } = await import("@/features/email/templates");
+    const row = rows.find((r) => r.teamId === selected[0].id)!;
+    const rendered = renderEmail(row.template, JSON.parse(row.payloadJson));
+    expect(rendered.html).toContain(selected[0].name);
+    expect(rendered.html).toContain(selected[0].members[0].fullName);
+    expect(rendered.html).toContain("JOIN TELEGRAM GROUP");
+
+    expect(await sendSelectionEmails(t.ctx, superAdmin)).toMatchObject({ queued: 0, skipped: expected });
+    expect((await t.ctx.db.select().from(emailOutbox)).length).toBe(before + expected);
+
+    await drainOutbox(t.ctx, 50);
+    const st = await selectionSendStatus(t.ctx);
+    expect(st.byStatus.SENT).toBe(expected);
   });
 });

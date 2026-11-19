@@ -16,10 +16,10 @@ const localPhone = (p: string) => (p.startsWith("+880") ? `0${p.slice(4, 8)}-${p
 
 export default async function FinalSelection() {
   const { ctx } = await requireAdminPage("registrations.contact");
-  const { selected, waiting, rejected, others, settings, tpl, render } = await selectionContext(ctx);
+  const { selected, waiting, rejected, others, settings, tpl } = await selectionContext(ctx);
 
   const compose = (team: SelectionTeam): Composed => {
-    const mail = renderForTeam(team, settings, tpl, render);
+    const mail = renderForTeam(team, settings, tpl);
     const to = team.members.map((m) => m.email);
     // Gmail opens with recipients and subject; the formatted body is pasted in from "Copy formatted email".
     return { subject: mail.subject, text: mail.text, fragment: mail.fragment, to, mailto: mailtoLink(to, mail.subject, mail.text), gmail: gmailComposeLink(to, mail.subject) };
@@ -31,7 +31,7 @@ export default async function FinalSelection() {
     <>
       <AdminHeader
         title="Final selection"
-        lead="Selected teams, the waiting queue and rejected teams, with every member's contacts. Emails are sent by hand: nothing on this page sends anything from the portal."
+        lead="Selected teams, the waiting queue and rejected teams, with every member's contacts. Nothing on this page sends email."
         actions={
           <a className="btn btn-secondary btn-sm" href="/api/v1/admin/export/final-selection">
             <Download size={15} aria-hidden /> Export contacts CSV
@@ -66,7 +66,7 @@ export default async function FinalSelection() {
           <li>
             Click <strong>Copy formatted email</strong>, then paste (Ctrl+V) into the message box: the banner, buttons and links come with it.
           </li>
-          <li>Check it and press Send. Use <strong>Preview</strong> to see the email first. The portal itself never sends anything.</li>
+          <li>Check it and press Send. Use <strong>Preview</strong> to see the email first. Nothing on this page sends email; to email all selected teams at once, use the Send button on the Emails page.</li>
         </ol>
         <TeamList teams={selected} compose={compose} withEmail />
       </Section>
