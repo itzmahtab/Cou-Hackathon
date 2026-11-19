@@ -86,9 +86,9 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
 
       <Section title="Selection email template" className="mb-6">
         <p className="mb-4 text-sm text-muted">
-          Edit the email for the selected teams (CoU TECHNOVA design: team card, Telegram button, helpline). Saving does not send anything. Send it to everyone with the button above, or to one team by hand from Final selection.
+          Choose the design (TECHNOVA orange or Purple banner) and edit the email for the selected teams. Saving does not send anything. Send it to everyone with the button above, or to one team by hand from Final selection.
         </p>
-        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} canEdit />
+        <SelectionTemplateEditor action={saveSelectionTemplateAction} initial={sel.tpl} sample={sample} assetBase={sel.assetBase} canEdit />
       </Section>
       <form className="card mb-5 flex flex-wrap gap-3 p-4" role="search">
         <input name="q" defaultValue={sp.q} placeholder="Recipient email" aria-label="Recipient" className="input min-w-56 flex-1" />

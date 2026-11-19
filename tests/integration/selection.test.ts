@@ -98,3 +98,22 @@ describe("send to all selected teams", () => {
     expect(st.byStatus.SENT).toBe(expected);
   });
 });
+
+describe("design choice reaches Send to all", () => {
+  test("a saved Purple design is what the queued emails render", async () => {
+    const { renderEmail } = await import("@/features/email/templates");
+    const { sendSelectionEmails } = await import("@/features/selection/service");
+    await saveSelectionTemplate(t.ctx, superAdmin, { ...DEFAULT_SELECTION_TEMPLATE, design: "classic" });
+    expect((await getSelectionTemplate(t.ctx)).design).toBe("classic");
+    // A new member address so this send queues fresh rows.
+    const { participants } = await import("@/lib/db/schema");
+    const { selected } = await finalSelection(t.ctx);
+    await t.ctx.db.update(participants).set({ email: "new-member@example.com" }).where(eq(participants.teamId, selected[0].id));
+    const res = await sendSelectionEmails(t.ctx, superAdmin);
+    expect(res.queued).toBeGreaterThan(0);
+    const row = (await t.ctx.db.select().from(emailOutbox)).find((r) => r.template === "final_selection" && r.toEmail === "new-member@example.com")!;
+    const out = renderEmail(row.template, JSON.parse(row.payloadJson));
+    expect(out.html).toContain("/email/header.jpg");
+    expect(out.html).toContain(">Read the rulebook<");
+  });
+});

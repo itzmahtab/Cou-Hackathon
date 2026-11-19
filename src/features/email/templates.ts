@@ -279,7 +279,7 @@ export const TEMPLATES = {
   /** The organisers' selection email, rendered when it is queued (see features/selection). */
   final_selection: (p: P) => {
     const tpl = { ...DEFAULT_SELECTION_TEMPLATE, ...((p.tpl as Partial<SelectionTemplate> | undefined) ?? {}) };
-    const out = renderSelectionEmail(tpl, (p.vars as Partial<TemplateVars> | undefined) ?? { teamName: s(p.teamName) }, { members: Array.isArray(p.members) ? p.members.map(s) : [] });
+    const out = renderSelectionEmail(tpl, (p.vars as Partial<TemplateVars> | undefined) ?? { teamName: s(p.teamName) }, { members: Array.isArray(p.members) ? p.members.map(s) : [], assetBase: p.assetBase ? s(p.assetBase) : undefined });
     return { subject: out.subject, html: out.html, text: out.text };
   },
 } satisfies Record<string, (p: P) => RenderedEmail>;
