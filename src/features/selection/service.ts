@@ -7,6 +7,7 @@ import { getSettings, type Settings } from "@/lib/settings";
 import { formatDhaka, formatDhakaDate } from "@/lib/time";
 import { AppError } from "@/lib/http";
 import { enqueue, type OutboxEntry } from "../email/outbox";
+import { promoteFromWaitlist, setCandidate, setWaitlistPosition } from "../shortlist/service";
 import { DEFAULT_PAYMENT_TEMPLATE, DEFAULT_SELECTION_TEMPLATE, joinNames, renderSelectionEmail, safeUrl, type SelectionTemplate, type TemplateVars } from "./template";
 
 /** The two editable emails and where each is stored. */
@@ -191,29 +192,47 @@ export async function selectionSendStatus(ctx: Ctx) {
  * Queues one personalised selection email per member of every selected team, from the
  * portal's sender (EMAIL_FROM). Each member gets it at most once, however often this runs.
  */
-export async function sendSelectionEmails(ctx: Ctx, admin: Admin) {
-  const { selected, settings, tpl } = await selectionContext(ctx);
+/** Queues the selection email for every member of the given teams; each member gets it at most once. */
+async function queueSelectionFor(ctx: Ctx, admin: Admin, list: SelectionTeam[], settings: Settings, tpl: SelectionTemplate) {
   const entries: OutboxEntry[] = [];
-  for (const team of selected) {
+  for (const team of list) {
     // Rendered by the "final_selection" email template when sent, through the same escaping renderer.
     const payload = { tpl, vars: templateVars(team, settings, tpl), members: team.members.map((m) => m.fullName), assetBase: ctx.env.APP_URL };
-    for (const m of team.members) {
-      entries.push({
-        template: SEND_TEMPLATE,
-        to: m.email,
-        dedupe: `${team.id}:${m.email.toLowerCase()}`,
-        teamId: team.id,
-        payload,
-        requestedBy: admin.id,
-      });
-    }
+    for (const m of team.members) entries.push({ template: SEND_TEMPLATE, to: m.email, dedupe: `${team.id}:${m.email.toLowerCase()}`, teamId: team.id, payload, requestedBy: admin.id });
   }
-  const before = (await ctx.db.select({ n: sql<number>`count(*)` }).from(emailOutbox).where(eq(emailOutbox.template, SEND_TEMPLATE)))[0]?.n ?? 0;
+  const count = async () => (await ctx.db.select({ n: sql<number>`count(*)` }).from(emailOutbox).where(eq(emailOutbox.template, SEND_TEMPLATE)))[0]?.n ?? 0;
+  const before = await count();
   await enqueue(ctx, entries);
-  const after = (await ctx.db.select({ n: sql<number>`count(*)` }).from(emailOutbox).where(eq(emailOutbox.template, SEND_TEMPLATE)))[0]?.n ?? 0;
-  const queued = after - before;
-  await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.final_selection", detail: { teams: selected.length, recipients: entries.length, queued } }));
-  return { teams: selected.length, recipients: entries.length, queued, skipped: entries.length - queued };
+  const queued = (await count()) - before;
+  return { recipients: entries.length, queued };
+}
+
+/**
+ * Queues one personalised selection email per member of every selected team, from the
+ * portal's sender (EMAIL_FROM). Each member gets it at most once, however often this runs.
+ */
+export async function sendSelectionEmails(ctx: Ctx, admin: Admin) {
+  const { selected, settings, tpl } = await selectionContext(ctx);
+  const { recipients, queued } = await queueSelectionFor(ctx, admin, selected, settings, tpl);
+  await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.final_selection", detail: { teams: selected.length, recipients, queued } }));
+  return { teams: selected.length, recipients, queued, skipped: recipients - queued };
+}
+
+export const WAITLIST_PROMOTION_NOTE = "Promoted from the waitlist in the final review";
+
+/**
+ * Moves one waiting team onto the selected list (an override if the list is already full)
+ * and emails the selection email to its members. Only runs when an admin presses that team's button.
+ */
+export async function selectFromWaitlistAndEmail(ctx: Ctx, admin: Admin, teamId: string) {
+  const { waiting } = await finalSelection(ctx);
+  const team = waiting.find((t) => t.id === teamId);
+  if (!team) throw new AppError(409, "INVALID_TRANSITION", "This team is not on the waiting list.");
+  await promoteFromWaitlist(ctx, admin, teamId, WAITLIST_PROMOTION_NOTE);
+  const [settings, tpl] = await Promise.all([getSettings(ctx), getTemplate(ctx, "selection")]);
+  const { recipients, queued } = await queueSelectionFor(ctx, admin, [team], settings, tpl);
+  await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.selection_waitlist", entityType: "team", entityId: team.id, detail: { recipients, queued } }));
+  return { team: team.name, recipients, queued };
 }
 
 /* ------------------------------------------------------------------ */
@@ -256,4 +275,21 @@ export async function sendPaymentConfirmation(ctx: Ctx, admin: Admin, teamId: st
   const queued = (await count()) - before;
   await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.payment_confirmation", entityType: "team", entityId: team.id, detail: { recipients: entries.length, queued } }));
   return { team: team.name, recipients: entries.length, queued };
+}
+
+/**
+ * Takes a selected or waiting team off the final selection and lists it under Rejected.
+ * Sends nothing. Only possible before the shortlist is finalised.
+ */
+export async function removeFromFinalSelection(ctx: Ctx, admin: Admin, teamId: string) {
+  const { selected, waiting } = await finalSelection(ctx);
+  const team = selected.find((t) => t.id === teamId) ?? waiting.find((t) => t.id === teamId);
+  if (!team) throw new AppError(409, "INVALID_TRANSITION", "This team is not selected or waiting.");
+  if (selected.some((t) => t.id === teamId)) await setCandidate(ctx, admin, teamId, false);
+  else await setWaitlistPosition(ctx, admin, teamId, null);
+  await ctx.db.batch([
+    ctx.db.insert(shortlistSelections).values({ id: crypto.randomUUID(), teamId, action: "REMOVE", justification: REJECTED_NOTE, adminId: admin.id, createdAt: ctx.now() }),
+    ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "shortlist.final_remove", entityType: "team", entityId: teamId })),
+  ]);
+  return { team: team.name };
 }

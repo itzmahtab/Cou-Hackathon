@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin, runAction, type ActionResult } from "@/lib/server";
 import { z } from "zod";
-import { saveTemplate, sendPaymentConfirmation, sendSelectionEmails, type TemplateInput } from "@/features/selection/service";
+import { removeFromFinalSelection, saveTemplate, selectFromWaitlistAndEmail, sendPaymentConfirmation, sendSelectionEmails, type TemplateInput } from "@/features/selection/service";
 import { drainOutbox } from "@/features/email/outbox";
 import { runAfter } from "@/lib/ctx";
 
@@ -66,5 +66,28 @@ export async function sendSelectionEmailsAction(_: ActionResult | null, fd: Form
         ? `Queued ${res.queued} email(s) to the ${res.teams} selected teams. They go out over the next few minutes.${res.skipped ? ` ${res.skipped} member(s) already had this email and were skipped.` : ""}`
         : `Nothing new to send: all ${res.recipients} members of the ${res.teams} selected teams already have this email.`,
     };
+  });
+}
+
+/** Selects one waiting team for the final and emails it the selection email (super admins only). */
+export async function selectFromWaitlistAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("emails.broadcast");
+    const teamId = z.string().uuid().parse(fd.get("teamId"));
+    const res = await selectFromWaitlistAndEmail(ctx, admin, teamId);
+    if (res.queued) runAfter(drainOutbox(ctx));
+    revalidatePath("/admin", "layout");
+    return { message: `${res.team} is now selected. Sending the selection email to ${res.queued} member(s).` };
+  });
+}
+
+/** Removes a team from the final selection (moves it to Rejected). Sends nothing. */
+export async function removeFromFinalSelectionAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("shortlist.manage");
+    const teamId = z.string().uuid().parse(fd.get("teamId"));
+    const res = await removeFromFinalSelection(ctx, admin, teamId);
+    revalidatePath("/admin", "layout");
+    return { message: `${res.team} was removed from the final selection. No email was sent.` };
   });
 }
