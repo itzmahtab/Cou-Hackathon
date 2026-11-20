@@ -106,3 +106,18 @@ describe("Purple banner design (classic)", () => {
     expect(m.fragment).not.toContain("javascript:");
   });
 });
+
+describe("payment confirmed template", () => {
+  test("defaults: PAYMENT CONFIRMED with ✅; the selection email keeps 🎉", async () => {
+    const { DEFAULT_PAYMENT_TEMPLATE } = await import("@/features/selection/template");
+    const m = renderSelectionEmail(DEFAULT_PAYMENT_TEMPLATE, { teamName: "T", feeBdt: "1350", eventDate: "24 November 2026", venue: "Comilla University" }, { members: ["A"] });
+    expect(m.subject).toBe("Payment confirmed: your place in the CoU AI Hackathon 2026 final | T");
+    expect(m.fragment).toContain(">✅<");
+    expect(m.fragment).toContain("PAYMENT CONFIRMED!");
+    expect(m.fragment).toContain("BDT 1350");
+    expect(m.fragment).toContain("24 November 2026");
+    expect(renderSelectionEmail(DEFAULT_SELECTION_TEMPLATE, {}).fragment).toContain(">🎉<");
+    const classic = renderSelectionEmail({ ...DEFAULT_PAYMENT_TEMPLATE, design: "classic" }, { teamName: "T" }, { assetBase: "https://x.test" });
+    expect(classic.fragment).toContain("Payment confirmed, T! ✅");
+  });
+});

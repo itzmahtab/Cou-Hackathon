@@ -1,4 +1,4 @@
-import { DEFAULT_SELECTION_TEMPLATE, renderSelectionEmail, type SelectionTemplate, type TemplateVars } from "../selection/template";
+import { DEFAULT_PAYMENT_TEMPLATE, DEFAULT_SELECTION_TEMPLATE, renderSelectionEmail, type SelectionTemplate, type TemplateVars } from "../selection/template";
 
 export interface RenderedEmail {
   subject: string;
@@ -282,6 +282,12 @@ export const TEMPLATES = {
     const out = renderSelectionEmail(tpl, (p.vars as Partial<TemplateVars> | undefined) ?? { teamName: s(p.teamName) }, { members: Array.isArray(p.members) ? p.members.map(s) : [], assetBase: p.assetBase ? s(p.assetBase) : undefined });
     return { subject: out.subject, html: out.html, text: out.text };
   },
+  /** The payment-confirmed email, sent per team by an admin (see features/selection). */
+  payment_confirmation: (p: P) => {
+    const tpl = { ...DEFAULT_PAYMENT_TEMPLATE, ...((p.tpl as Partial<SelectionTemplate> | undefined) ?? {}) };
+    const out = renderSelectionEmail(tpl, (p.vars as Partial<TemplateVars> | undefined) ?? { teamName: s(p.teamName) }, { members: Array.isArray(p.members) ? p.members.map(s) : [], assetBase: p.assetBase ? s(p.assetBase) : undefined });
+    return { subject: out.subject, html: out.html, text: out.text };
+  },
 } satisfies Record<string, (p: P) => RenderedEmail>;
 
 export type TemplateName = keyof typeof TEMPLATES;
@@ -301,6 +307,7 @@ export const TEMPLATE_LABELS: Record<TemplateName, string> = {
   showcase_confirmed: "Showcase: confirmed",
   showcase_rejected: "Showcase: payment rejected",
   final_selection: "Final selection (team email)",
+  payment_confirmation: "Payment confirmed (team email)",
 };
 
 export function renderEmail(template: string, payload: P): RenderedEmail {

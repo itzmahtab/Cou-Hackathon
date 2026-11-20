@@ -22,6 +22,7 @@ const DESIGN_FIELDS: Record<SelectionDesign, { text: Field[]; lines: Field[] }> 
       { key: "telegramNote", label: "Telegram note (above the button)", rows: 3 },
     ],
     lines: [
+      { key: "emoji", label: "Icon at the top (emoji)" },
       { key: "headline", label: "Headline" },
       { key: "subheadline", label: "Line under the headline" },
       { key: "telegramLabel", label: "Telegram button text" },
@@ -50,7 +51,23 @@ const SHARED: Field[] = [
 ];
 
 /** Edits the selection email and shows the real formatted email for one team, exactly as it will be sent. */
-export function SelectionTemplateEditor({ action, initial, sample, assetBase, canEdit }: { action: Action; initial: SelectionTemplate; sample: Sample | null; assetBase: string; canEdit: boolean }) {
+export function SelectionTemplateEditor({
+  action,
+  initial,
+  defaults = DEFAULT_SELECTION_TEMPLATE,
+  sample,
+  assetBase,
+  canEdit,
+  footnote,
+}: {
+  action: Action;
+  initial: SelectionTemplate;
+  defaults?: SelectionTemplate;
+  sample: Sample | null;
+  assetBase: string;
+  canEdit: boolean;
+  footnote?: string;
+}) {
   const [tpl, setTpl] = useState<SelectionTemplate>(initial);
   const set = (k: Key) => (e: { target: { value: string } }) => setTpl((t) => ({ ...t, [k]: e.target.value }));
   const mail = renderSelectionEmail(tpl, sample?.vars ?? {}, { members: sample?.members ?? [], assetBase });
@@ -61,7 +78,7 @@ export function SelectionTemplateEditor({ action, initial, sample, assetBase, ca
   const resetDesign = () =>
     setTpl((t) => {
       const next = { ...t };
-      for (const f of [...fields.text, ...fields.lines]) (next as Record<Key, string>)[f.key] = DEFAULT_SELECTION_TEMPLATE[f.key];
+      for (const f of [...fields.text, ...fields.lines]) (next as Record<Key, string>)[f.key] = defaults[f.key];
       return next;
     });
 
@@ -155,7 +172,11 @@ export function SelectionTemplateEditor({ action, initial, sample, assetBase, ca
         </p>
         <iframe title="Email preview" srcDoc={mail.html} sandbox="" className={cn("h-[960px] w-full rounded-xl border border-line", tpl.design === "classic" ? "bg-[#f1f5f9]" : "bg-[#0b0603]")} />
         <p className="text-xs text-muted">
-          Saving never sends anything. To email every selected team at once, use the Send button above (super admin). To send one team by hand, use <a className="underline" href="/admin/final-selection">Final selection</a>.
+          {footnote ?? (
+            <>
+              Saving never sends anything. To email every selected team at once, use the Send button above (super admin). To send one team by hand, use <a className="underline" href="/admin/final-selection">Final selection</a>.
+            </>
+          )}
         </p>
       </div>
     </div>

@@ -2,38 +2,50 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin, runAction, type ActionResult } from "@/lib/server";
-import { saveSelectionTemplate, sendSelectionEmails } from "@/features/selection/service";
+import { z } from "zod";
+import { saveTemplate, sendPaymentConfirmation, sendSelectionEmails, type TemplateInput } from "@/features/selection/service";
 import { drainOutbox } from "@/features/email/outbox";
 import { runAfter } from "@/lib/ctx";
 
-/** Saves the hand-sent selection email template. Nothing is emailed. */
+const FIELDS = ["emoji", "subject", "headline", "subheadline", "body", "telegramNote", "telegramLabel", "websiteCaption", "classicSubject", "classicHeading", "classicBody", "classicTelegramLabel", "classicRulebookLabel", "classicWebsiteLabel", "helplineEmail", "telegramLink", "websiteLink", "rulebookLink"] as const;
+
+/** Reads the template editor's form. */
+function templateFromForm(fd: FormData): TemplateInput {
+  const out: Record<string, string> = {};
+  for (const k of FIELDS) out[k] = String(fd.get(k) ?? "");
+  return { ...(out as Omit<TemplateInput, "design">), design: fd.get("design") === "classic" ? "classic" : "technova" };
+}
+
+/** Saves the selection email template. Nothing is emailed. */
 export async function saveSelectionTemplateAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return runAction(async () => {
     const { ctx, admin } = await requireAdmin("emails.manage");
-    const f = (k: string) => String(fd.get(k) ?? "");
-    await saveSelectionTemplate(ctx, admin, {
-      design: f("design") === "classic" ? "classic" : "technova",
-      subject: f("subject"),
-      headline: f("headline"),
-      subheadline: f("subheadline"),
-      body: f("body"),
-      telegramNote: f("telegramNote"),
-      telegramLabel: f("telegramLabel"),
-      websiteCaption: f("websiteCaption"),
-      classicSubject: f("classicSubject"),
-      classicHeading: f("classicHeading"),
-      classicBody: f("classicBody"),
-      classicTelegramLabel: f("classicTelegramLabel"),
-      classicRulebookLabel: f("classicRulebookLabel"),
-      classicWebsiteLabel: f("classicWebsiteLabel"),
-      helplineEmail: f("helplineEmail"),
-      telegramLink: f("telegramLink"),
-      websiteLink: f("websiteLink"),
-      rulebookLink: f("rulebookLink"),
-    });
+    await saveTemplate(ctx, admin, "selection", templateFromForm(fd));
     revalidatePath("/admin/emails");
     revalidatePath("/admin/final-selection");
     return { message: "Template saved. Nothing was emailed." };
+  });
+}
+
+/** Saves the payment-confirmed email template. Nothing is emailed. */
+export async function savePaymentTemplateAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("emails.manage");
+    await saveTemplate(ctx, admin, "payment", templateFromForm(fd));
+    revalidatePath("/admin/emails");
+    return { message: "Template saved. Nothing was emailed." };
+  });
+}
+
+/** Emails the payment confirmation to one team's members (only when an admin presses that team's button). */
+export async function sendPaymentConfirmationAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("emails.manage");
+    const teamId = z.string().uuid().parse(fd.get("teamId"));
+    const res = await sendPaymentConfirmation(ctx, admin, teamId);
+    if (res.queued) runAfter(drainOutbox(ctx));
+    revalidatePath("/admin/emails");
+    return { message: res.queued ? `Sending to ${res.queued} member(s) of ${res.team}.` : `${res.team} already has this email. Nothing new was sent.` };
   });
 }
 

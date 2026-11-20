@@ -117,3 +117,32 @@ describe("design choice reaches Send to all", () => {
     expect(out.html).toContain(">Read the rulebook<");
   });
 });
+
+describe("payment confirmation per team", () => {
+  test("emails one selected team's members once; refuses others; renders; leaves the selection template alone", async () => {
+    const { sendPaymentConfirmation, paymentEmailStatus, getTemplate, saveTemplate } = await import("@/features/selection/service");
+    const { renderEmail } = await import("@/features/email/templates");
+    const { drainOutbox } = await import("@/features/email/outbox");
+    const { DEFAULT_PAYMENT_TEMPLATE } = await import("@/features/selection/template");
+    const { selected, waiting } = await finalSelection(t.ctx);
+    const team = selected[1];
+
+    expect(await getTemplate(t.ctx, "payment")).toEqual(DEFAULT_PAYMENT_TEMPLATE);
+    const selBefore = await getSelectionTemplate(t.ctx);
+    await saveTemplate(t.ctx, superAdmin, "payment", { ...DEFAULT_PAYMENT_TEMPLATE, headline: "PAID, {teamName}!" });
+    expect(await getSelectionTemplate(t.ctx)).toEqual(selBefore);
+
+    const r1 = await sendPaymentConfirmation(t.ctx, superAdmin, team.id);
+    expect(r1).toMatchObject({ team: team.name, recipients: team.members.length, queued: team.members.length });
+    const rows = (await t.ctx.db.select().from(emailOutbox)).filter((r) => r.template === "payment_confirmation");
+    expect(rows.every((r) => r.teamId === team.id)).toBe(true);
+    expect(new Set(rows.map((r) => r.toEmail))).toEqual(new Set(team.members.map((m) => m.email)));
+    expect(renderEmail(rows[0].template, JSON.parse(rows[0].payloadJson)).html).toContain(`PAID, ${team.name}!`);
+
+    expect((await sendPaymentConfirmation(t.ctx, superAdmin, team.id)).queued).toBe(0);
+    await expect(sendPaymentConfirmation(t.ctx, superAdmin, waiting[0].id)).rejects.toThrow(/not on the final selection/);
+
+    await drainOutbox(t.ctx, 50);
+    expect((await paymentEmailStatus(t.ctx))[team.id]).toMatchObject({ sent: team.members.length, queued: 0, failed: 0 });
+  });
+});

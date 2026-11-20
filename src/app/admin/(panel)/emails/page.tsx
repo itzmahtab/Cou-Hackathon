@@ -1,9 +1,10 @@
 import { and, desc, eq, like, sql, type SQL } from "drizzle-orm";
 import { drainNowAction, resendEmailAction, testEmailAction } from "@/app/admin/actions/results";
-import { saveSelectionTemplateAction, sendSelectionEmailsAction } from "@/app/admin/actions/selection";
+import { savePaymentTemplateAction, saveSelectionTemplateAction, sendPaymentConfirmationAction, sendSelectionEmailsAction } from "@/app/admin/actions/selection";
 import { ActionForm } from "@/components/admin/action-form";
 import { SelectionTemplateEditor } from "@/components/admin/selection-template-editor";
-import { selectionContext, selectionSendStatus, templateVars } from "@/features/selection/service";
+import { getTemplate, paymentEmailStatus, selectionContext, selectionSendStatus, templateVars } from "@/features/selection/service";
+import { DEFAULT_PAYMENT_TEMPLATE } from "@/features/selection/template";
 import { can } from "@/lib/auth/permissions";
 import { AdminHeader, Empty, Section, StatusBadge } from "@/components/admin/ui";
 import { smtpPasswordSource } from "@/features/email/config";
@@ -33,9 +34,10 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
     ctx.db.select({ status: emailOutbox.status, n: sql<number>`count(*)` }).from(emailOutbox).groupBy(emailOutbox.status),
   ]);
   const count = Object.fromEntries(counts.map((c) => [c.status, c.n]));
-  const [sel, sendStatus] = await Promise.all([selectionContext(ctx), selectionSendStatus(ctx)]);
+  const [sel, sendStatus, payTpl, payStatus] = await Promise.all([selectionContext(ctx), selectionSendStatus(ctx), getTemplate(ctx, "payment"), paymentEmailStatus(ctx)]);
   const sampleTeam = sel.selected[0] ?? null;
   const sample = sampleTeam ? { vars: templateVars(sampleTeam, sel.settings, sel.tpl), members: sampleTeam.members.map((m) => m.fullName), label: `filled in for ${sampleTeam.name}` } : null;
+  const paySample = sampleTeam ? { vars: templateVars(sampleTeam, sel.settings, payTpl), members: sampleTeam.members.map((m) => m.fullName), label: `filled in for ${sampleTeam.name}` } : null;
   const provider = ctx.env.EMAIL_PROVIDER;
   const smtpSource = await smtpPasswordSource(ctx);
 
@@ -51,6 +53,87 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
           </div>
         }
       />
+      <Section title={`Payment confirmation email: send per team (${sel.selected.length} teams)`} className="mb-6 border-success/40">
+        <p className="mb-4 text-sm text-muted">
+          After you have verified a team&apos;s bKash payment, press <strong>Send payment confirmation</strong> on that team. It emails the payment-confirmed template (edit it below) to every member of that team only, from{" "}
+          <strong>{ctx.env.EMAIL_FROM ?? ctx.env.SMTP_USER}</strong>. Nothing is sent until you press a team&apos;s button, and each member gets it once.
+        </p>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Team</th>
+                <th scope="col">Members</th>
+                <th scope="col">Payment email</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sel.selected.map((t, i) => {
+                const st = payStatus[t.id];
+                const done = st && st.sent >= t.members.length;
+                return (
+                  <tr key={t.id} className={done ? "bg-success/[0.06]" : undefined}>
+                    <td className="font-mono text-muted">{i + 1}</td>
+                    <td className="min-w-48">
+                      <span className="font-semibold">{t.name}</span>
+                      <span className="block font-mono text-xs text-muted">{t.registrationId}</span>
+                    </td>
+                    <td className="min-w-56 text-xs">
+                      {t.members.map((m) => (
+                        <span key={m.email} className="block">
+                          {m.fullName} · <span className="text-muted">{m.email}</span>
+                        </span>
+                      ))}
+                    </td>
+                    <td className="whitespace-nowrap text-sm">
+                      {!st ? (
+                        <span className="text-muted">Not sent</span>
+                      ) : (
+                        <span className={done ? "text-success" : undefined}>
+                          Sent {st.sent}/{t.members.length}
+                          {st.queued > 0 && ` · ${st.queued} queued`}
+                          {st.failed > 0 && <span className="text-danger"> · {st.failed} failed</span>}
+                        </span>
+                      )}
+                    </td>
+                    <td className="min-w-64">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <ActionForm
+                          action={sendPaymentConfirmationAction}
+                          submitLabel={done ? "Send again to new members" : "Send payment confirmation"}
+                          submitClass={done ? "btn-secondary" : "btn-primary"}
+                          inline
+                          confirm={`Email the payment confirmation to ${t.name} (${t.members.length} member${t.members.length === 1 ? "" : "s"}) now?`}
+                        >
+                          <input type="hidden" name="teamId" value={t.id} />
+                        </ActionForm>
+                        <a className="btn btn-secondary btn-sm" href={`/admin/final-selection/preview/${t.id}?kind=payment`} target="_blank" rel="noreferrer">
+                          Preview
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      <Section title="Payment confirmation email template" className="mb-6">
+        <SelectionTemplateEditor
+          action={savePaymentTemplateAction}
+          initial={payTpl}
+          defaults={DEFAULT_PAYMENT_TEMPLATE}
+          sample={paySample}
+          assetBase={sel.assetBase}
+          canEdit
+          footnote="Saving never sends anything. Each team's email goes out only when you press its Send payment confirmation button above."
+        />
+      </Section>
+
       <Section title="Send the selection email to all selected teams" className="mb-6 border-warning/40">
         <p className="mb-3 text-sm text-muted">
           Sends the template below, personalised for each team (team name and members), to <strong>every member</strong> of the{" "}
