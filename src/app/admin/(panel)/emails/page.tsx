@@ -3,6 +3,7 @@ import { drainNowAction, resendEmailAction, testEmailAction } from "@/app/admin/
 import { savePaymentTemplateAction, saveSelectionTemplateAction, sendPaymentConfirmationAction, sendSelectionEmailsAction } from "@/app/admin/actions/selection";
 import { ActionForm } from "@/components/admin/action-form";
 import { SelectionTemplateEditor } from "@/components/admin/selection-template-editor";
+import { WaitlistSelectButton } from "@/components/admin/waitlist-select-button";
 import { getTemplate, paymentEmailStatus, selectionContext, selectionSendStatus, templateVars } from "@/features/selection/service";
 import { DEFAULT_PAYMENT_TEMPLATE } from "@/features/selection/template";
 import { can } from "@/lib/auth/permissions";
@@ -164,6 +165,56 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
           )
         ) : (
           <p className="text-sm text-muted">Only a super admin can send this.</p>
+        )}
+      </Section>
+
+      <Section title={`Waiting list: select & send the selection email (${sel.waiting.length} teams)`} className="mb-6">
+        <p className="mb-4 text-sm text-muted">
+          When you pick a waiting team for the final, press <strong>Select &amp; send selection email</strong> on it. It moves the team to the selected list (above the limit if needed, recorded as an override) and emails the selection template below to that team&apos;s members only. Nothing is sent until you press a team&apos;s button. Super admins only.
+        </p>
+        {sel.waiting.length === 0 ? (
+          <p className="text-sm text-muted">No teams on the waiting list.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Queue</th>
+                  <th scope="col">Team</th>
+                  <th scope="col">Members</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sel.waiting.map((t) => (
+                  <tr key={t.id}>
+                    <td className="font-mono font-semibold">#{t.waitlist}</td>
+                    <td className="min-w-48">
+                      <span className="font-semibold">{t.name}</span>
+                      <span className="block font-mono text-xs text-muted">
+                        {t.registrationId} · score {t.score ?? "—"}
+                      </span>
+                    </td>
+                    <td className="min-w-56 text-xs">
+                      {t.members.map((m) => (
+                        <span key={m.email} className="block">
+                          {m.fullName} · <span className="text-muted">{m.email}</span>
+                        </span>
+                      ))}
+                    </td>
+                    <td className="min-w-64">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {can(admin.role, "emails.broadcast") ? <WaitlistSelectButton teamId={t.id} teamName={t.name} members={t.members.length} /> : <span className="text-xs text-muted">Super admin only</span>}
+                        <a className="btn btn-secondary btn-sm" href={`/admin/final-selection/preview/${t.id}`} target="_blank" rel="noreferrer">
+                          Preview
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Section>
 

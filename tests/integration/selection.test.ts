@@ -146,3 +146,62 @@ describe("payment confirmation per team", () => {
     expect((await paymentEmailStatus(t.ctx))[team.id]).toMatchObject({ sent: team.members.length, queued: 0, failed: 0 });
   });
 });
+
+describe("waiting list: select & send selection email", () => {
+  test("promotes the team (override when full), emails only its members once, refuses repeats", async () => {
+    const { selectFromWaitlistAndEmail, sendSelectionEmails, WAITLIST_PROMOTION_NOTE } = await import("@/features/selection/service");
+    const { settingsUpserts } = await import("@/lib/settings");
+    const { shortlistSelections } = await import("@/lib/db/schema");
+    const before = await finalSelection(t.ctx);
+    const team = before.waiting[0];
+    expect(team).toBeDefined();
+    // Make the list full so the promotion has to be an override.
+    await t.ctx.db.batch(settingsUpserts(t.ctx, { shortlistCapacity: before.selected.length }, superAdmin.id) as never);
+
+    const outboxBefore = (await t.ctx.db.select().from(emailOutbox)).length;
+    const res = await selectFromWaitlistAndEmail(t.ctx, superAdmin, team.id);
+    expect(res).toMatchObject({ team: team.name, recipients: team.members.length, queued: team.members.length });
+
+    const after = await finalSelection(t.ctx);
+    expect(after.selected.map((x) => x.id)).toContain(team.id);
+    expect(after.waiting.map((x) => x.id)).not.toContain(team.id);
+    const log = (await t.ctx.db.select().from(shortlistSelections)).filter((r) => r.teamId === team.id).at(-1)!;
+    expect(log).toMatchObject({ action: "OVERRIDE_ADD", justification: WAITLIST_PROMOTION_NOTE });
+
+    const rows = (await t.ctx.db.select().from(emailOutbox)).slice(outboxBefore);
+    expect(rows.every((r) => r.template === "final_selection" && r.teamId === team.id)).toBe(true);
+    expect(new Set(rows.map((r) => r.toEmail))).toEqual(new Set(team.members.map((m) => m.email)));
+
+    await expect(selectFromWaitlistAndEmail(t.ctx, superAdmin, team.id)).rejects.toThrow(/not on the waiting list/);
+    await expect(selectFromWaitlistAndEmail(t.ctx, superAdmin, after.selected[0].id)).rejects.toThrow(/not on the waiting list/);
+    // Send to all afterwards does not email this team again.
+    const outboxMid = (await t.ctx.db.select().from(emailOutbox)).filter((r) => r.teamId === team.id).length;
+    await sendSelectionEmails(t.ctx, superAdmin);
+    expect((await t.ctx.db.select().from(emailOutbox)).filter((r) => r.teamId === team.id).length).toBe(outboxMid);
+  });
+});
+
+describe("remove from final selection", () => {
+  test("a selected or a waiting team moves to Rejected; nothing is emailed", async () => {
+    const { removeFromFinalSelection, finalSelection: fs } = await import("@/features/selection/service");
+    const { setWaitlistPosition } = await import("@/features/shortlist/service");
+    const before = await fs(t.ctx);
+    const outbox = (await t.ctx.db.select().from(emailOutbox)).length;
+    const sel = before.selected[0];
+    await removeFromFinalSelection(t.ctx, superAdmin, sel.id);
+    let now = await fs(t.ctx);
+    expect(now.selected.map((x) => x.id)).not.toContain(sel.id);
+    expect(now.rejected.map((x) => x.id)).toContain(sel.id);
+
+    // Put it back on the waitlist, then remove it from there.
+    await setWaitlistPosition(t.ctx, superAdmin, sel.id, 1);
+    expect((await fs(t.ctx)).waiting.map((x) => x.id)).toContain(sel.id);
+    await removeFromFinalSelection(t.ctx, superAdmin, sel.id);
+    now = await fs(t.ctx);
+    expect(now.waiting.map((x) => x.id)).not.toContain(sel.id);
+    expect(now.rejected.map((x) => x.id)).toContain(sel.id);
+
+    await expect(removeFromFinalSelection(t.ctx, superAdmin, sel.id)).rejects.toThrow(/not selected or waiting/);
+    expect((await t.ctx.db.select().from(emailOutbox)).length).toBe(outbox);
+  });
+});

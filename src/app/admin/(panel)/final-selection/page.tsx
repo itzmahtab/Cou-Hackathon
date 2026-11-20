@@ -3,6 +3,10 @@ import Link from "next/link";
 import { CopyButton } from "@/components/admin/copy-button";
 import { CopyRichButton } from "@/components/admin/copy-rich-button";
 import { AdminHeader, Empty, Section, Stat, StatusBadge } from "@/components/admin/ui";
+import { WaitlistSelectButton } from "@/components/admin/waitlist-select-button";
+import { ActionForm } from "@/components/admin/action-form";
+import { removeFromFinalSelectionAction } from "@/app/admin/actions/selection";
+import { can } from "@/lib/auth/permissions";
 import { renderForTeam, selectionContext, type SelectionTeam } from "@/features/selection/service";
 import { gmailComposeLink, mailtoLink } from "@/features/selection/template";
 import { requireAdminPage } from "@/lib/server";
@@ -15,7 +19,8 @@ type Composed = { subject: string; text: string; fragment: string; to: string[];
 const localPhone = (p: string) => (p.startsWith("+880") ? `0${p.slice(4, 8)}-${p.slice(8)}` : p);
 
 export default async function FinalSelection() {
-  const { ctx } = await requireAdminPage("registrations.contact");
+  const { ctx, admin } = await requireAdminPage("registrations.contact");
+  const canRemove = can(admin.role, "shortlist.manage");
   const { selected, waiting, rejected, others, settings, tpl, assetBase } = await selectionContext(ctx);
 
   const compose = (team: SelectionTeam): Composed => {
@@ -68,12 +73,14 @@ export default async function FinalSelection() {
           </li>
           <li>Check it and press Send. Use <strong>Preview</strong> to see the email first. Nothing on this page sends email; to email all selected teams at once, use the Send button on the Emails page.</li>
         </ol>
-        <TeamList teams={selected} compose={compose} withEmail />
+        <TeamList teams={selected} compose={compose} withEmail remove={canRemove} />
       </Section>
 
       <Section title={`Waiting (${waiting.length})`} className="mb-6" actions={<CopyButton text={emailsOf(waiting)} label="Copy all emails" />}>
-        <p className="mb-4 text-sm text-muted">Next in line, in this order, if a selected team does not confirm. Manage the queue on the Shortlist page.</p>
-        <TeamList teams={waiting} compose={compose} queue />
+        <p className="mb-4 text-sm text-muted">
+          Next in line, in this order. <strong>Select &amp; send selection email</strong> moves a team to the selected list and emails its members the selection email (super admin). Manage the queue order on the Shortlist page.
+        </p>
+        <TeamList teams={waiting} compose={compose} queue promote={can(admin.role, "emails.broadcast")} remove={canRemove} />
       </Section>
 
       <Section title={`Rejected (${rejected.length})`} actions={rejected.length > 0 ? <CopyButton text={emailsOf(rejected)} label="Copy all emails" /> : undefined}>
@@ -83,7 +90,7 @@ export default async function FinalSelection() {
   );
 }
 
-function TeamList({ teams, compose, withEmail = false, queue = false }: { teams: SelectionTeam[]; compose: (t: SelectionTeam) => Composed; withEmail?: boolean; queue?: boolean }) {
+function TeamList({ teams, compose, withEmail = false, queue = false, promote = false, remove = false }: { teams: SelectionTeam[]; compose: (t: SelectionTeam) => Composed; withEmail?: boolean; queue?: boolean; promote?: boolean; remove?: boolean }) {
   if (teams.length === 0) return <Empty>No teams.</Empty>;
   return (
     <div className="table-wrap">
@@ -157,7 +164,13 @@ function TeamList({ teams, compose, withEmail = false, queue = false }: { teams:
                         </a>
                       </>
                     )}
+                    {promote && <WaitlistSelectButton teamId={t.id} teamName={t.name} members={t.members.length} />}
                     <CopyButton text={c.to.join(", ")} label="Copy emails" />
+                    {remove && (
+                      <ActionForm action={removeFromFinalSelectionAction} submitLabel="Remove" submitClass="btn-danger" inline confirm={`Remove ${t.name} from the final selection? It will be listed under Rejected. No email is sent.`}>
+                        <input type="hidden" name="teamId" value={t.id} />
+                      </ActionForm>
+                    )}
                   </div>
                 </td>
               </tr>
