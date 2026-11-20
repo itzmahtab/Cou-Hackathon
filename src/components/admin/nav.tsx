@@ -48,14 +48,14 @@ export function AdminNav({ allowed, name, role }: { allowed: string[]; name: str
         </span>
       </div>
       <aside id="admin-nav" className={cn("fixed inset-y-0 left-0 z-50 w-64 flex-col border-r border-line bg-surface p-4 lg:flex", open ? "flex" : "hidden")}>
-        <Link href="/admin" className="mb-6 hidden px-2 pt-2 lg:block">
+        <Link href="/admin" prefetch={false} className="mb-6 hidden px-2 pt-2 lg:block">
           <Image src="/event-logo-horizontal.png" alt="CoU AI Hackathon admin" width={1600} height={364} className="logo-adapt h-8 w-auto" />
         </Link>
         <nav aria-label="Admin" className="flex-1 overflow-y-auto">
           <ul className="grid gap-0.5">
             {items.map((i) => (
               <li key={i.href}>
-                <Link href={i.href} aria-current={active(i.href) ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors", active(i.href) ? "bg-primary/15 text-fg" : "text-muted hover:bg-fg/[0.05] hover:text-fg")}>
+                <Link href={i.href} prefetch={false} aria-current={active(i.href) ? "page" : undefined} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors", active(i.href) ? "bg-primary/15 text-fg" : "text-muted hover:bg-fg/[0.05] hover:text-fg")}>
                   <i.icon size={17} aria-hidden /> {i.label}
                 </Link>
               </li>
@@ -63,7 +63,7 @@ export function AdminNav({ allowed, name, role }: { allowed: string[]; name: str
           </ul>
         </nav>
         <div className="mt-4 border-t border-line pt-4">
-          <Link href="/admin/account" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted hover:bg-fg/[0.05] hover:text-fg">
+          <Link href="/admin/account" prefetch={false} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted hover:bg-fg/[0.05] hover:text-fg">
             <UserCircle size={17} aria-hidden />
             <span className="min-w-0">
               <span className="block truncate text-fg">{name}</span>
@@ -76,7 +76,7 @@ export function AdminNav({ allowed, name, role }: { allowed: string[]; name: str
             </button>
           </form>
           <div className="mt-1 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-muted hover:text-fg">
+            <Link href="/" prefetch={false} className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-muted hover:text-fg">
               <BarChart3 size={15} aria-hidden /> View public site
             </Link>
             <ThemeToggle className="hidden lg:inline-flex" />
