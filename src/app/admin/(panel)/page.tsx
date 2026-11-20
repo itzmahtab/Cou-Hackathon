@@ -25,11 +25,11 @@ export default async function Dashboard() {
         <Stat label="Teams" value={s.teams} hint={`${s.solo} solo · ${s.duo} duo · ${s.trio} trio`} />
         <Stat label="Participants" value={s.participants} />
         <Stat label="Shortlisted / confirmed" value={`${(s.byStatus.SHORTLISTED ?? 0) + (s.byStatus.CONFIRMED ?? 0)} / ${s.byStatus.CONFIRMED ?? 0}`} />
-        <Stat label="Payments to verify" value={s.payments.PENDING_VERIFICATION ?? 0} hint={<Link href="/admin/payments" className="underline">Open payments</Link>} />
+        <Stat label="Payments to verify" value={s.payments.PENDING_VERIFICATION ?? 0} hint={<Link href="/admin/payments" prefetch={false} className="underline">Open payments</Link>} />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Showcase teams" value={sc.teams} hint={`${sc.participants} participants`} />
-        <Stat label="Showcase to verify" value={sc.pending} hint={<Link href="/admin/showcase?status=PENDING_VERIFICATION" className="underline">Open showcase</Link>} />
+        <Stat label="Showcase to verify" value={sc.pending} hint={<Link href="/admin/showcase?status=PENDING_VERIFICATION" prefetch={false} className="underline">Open showcase</Link>} />
         <Stat label="Showcase confirmed" value={sc.confirmed} hint={`${sc.confirmedParticipants} participants`} />
         <Stat label="Showcase fees verified" value={`৳${sc.feesConfirmed}`} />
       </div>

@@ -26,8 +26,9 @@ export async function loginAction(_: ActionResult | null, fd: FormData): Promise
     const { token } = await login(ctx, email, password, ip, (await headers()).get("user-agent"));
     (await cookies()).set(sessionCookieName(ctx), token, sessionCookieOptions(ctx));
   });
-  if (!result.ok) return result;
-  redirect("/admin");
+  // The form loads /admin itself. A redirect here would render the dashboard inside
+  // this request too, and sign-in plus dashboard does not fit the Free plan's CPU limit.
+  return result;
 }
 
 export async function logoutAction() {
