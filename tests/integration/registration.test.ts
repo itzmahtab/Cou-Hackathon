@@ -213,7 +213,7 @@ describe("email password storage", () => {
     await t.ctx.db.update(admins).set({ passwordHash: old }).where(eq(admins.id, admin.id));
     await login(t.ctx, "legacy@hack.test", "legacy password 123", "1.1.1.1", null);
     const after = (await t.ctx.db.select().from(admins).where(eq(admins.id, admin.id)))[0];
-    expect(after.passwordHash.startsWith("$pbkdf2-sha256$i=100000$")).toBe(true);
+    expect(after.passwordHash.startsWith("$pbkdf2-sha256$i=10000$")).toBe(true);
     await login(t.ctx, "legacy@hack.test", "legacy password 123", "1.1.1.1", null);
   });
 });

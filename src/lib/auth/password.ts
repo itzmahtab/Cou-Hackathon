@@ -4,14 +4,18 @@ import { safeEqual } from "../ids";
 /**
  * Password hashing.
  *
- * New hashes use PBKDF2-SHA256 through Web Crypto, which Cloudflare runs natively and
- * which fits the Workers free plan's CPU budget. 100,000 iterations is the most
- * Workers allows. That is below OWASP's 600,000 for PBKDF2, so the other controls
- * matter: a 12-character minimum, per-IP and per-email sign-in rate limits, and
- * Turnstile. Older Argon2id hashes (pure JavaScript, about 300 ms each) still verify,
- * and are replaced with PBKDF2 the next time that admin signs in.
+ * New hashes use PBKDF2-SHA256 through Web Crypto, which Cloudflare runs natively.
+ * Web Crypto time still counts as Worker CPU time: 100,000 iterations took ~15 ms,
+ * which on top of Next.js pushed sign-in past the Workers Free plan's 10 ms limit
+ * (error 1102). 10,000 iterations take ~1.5 ms. That is far below OWASP's 600,000,
+ * so the other controls matter: a 12-character minimum, per-IP and per-email sign-in
+ * rate limits, and Turnstile. Older hashes (100,000-iteration PBKDF2, or Argon2id in
+ * pure JavaScript at ~300 ms) still verify, and are replaced with the current scheme
+ * the next time that admin signs in.
  */
-const ITERATIONS = 100_000;
+const ITERATIONS = 10_000;
+/** Workers refuses PBKDF2 above 100,000 iterations. */
+const MAX_ITERATIONS = 100_000;
 const enc = new TextEncoder();
 
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=+$/, "");
@@ -31,7 +35,8 @@ export async function hashPassword(password: string): Promise<string> {
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const p = /^\$pbkdf2-sha256\$i=(\d+)\$([^$]+)\$([^$]+)$/.exec(stored);
   if (p) {
-    const iterations = Math.min(Number(p[1]), ITERATIONS);
+    const iterations = Number(p[1]);
+    if (!Number.isInteger(iterations) || iterations < 1 || iterations > MAX_ITERATIONS) return false;
     return safeEqual(b64(await pbkdf2(password, unb64(p[2]), iterations)), p[3]);
   }
   const a = /^\$argon2id\$v=19\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$/.exec(stored);
