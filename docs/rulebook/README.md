@@ -1,6 +1,6 @@
 # Rule book
 
-`CoU_AI_Hackathon_2026_Rulebook_Revised.pdf` is the official rule book (revised 12 November 2026 for the 21–23 November pre-build period and the 24 November final).
+`public/rulebook.pdf` (served at `/rulebook.pdf`) is the official rule book (revised 12 November 2026 for the 21–23 November pre-build period and the 24 November final).
 
 To change it, edit the slide content in `build.py`, then:
 
