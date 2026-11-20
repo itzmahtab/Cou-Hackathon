@@ -5,60 +5,75 @@ import { activityRow } from "@/lib/auth/session";
 import { adminActivityLogs, emailOutbox, eventSettings, ideaSubmissions, participants, shortlistSelections, teams, type Admin } from "@/lib/db/schema";
 import { getSettings, type Settings } from "@/lib/settings";
 import { formatDhaka, formatDhakaDate } from "@/lib/time";
+import { AppError } from "@/lib/http";
 import { enqueue, type OutboxEntry } from "../email/outbox";
-import { DEFAULT_SELECTION_TEMPLATE, joinNames, renderSelectionEmail, safeUrl, type SelectionTemplate, type TemplateVars } from "./template";
+import { DEFAULT_PAYMENT_TEMPLATE, DEFAULT_SELECTION_TEMPLATE, joinNames, renderSelectionEmail, safeUrl, type SelectionTemplate, type TemplateVars } from "./template";
 
-const TEMPLATE_KEY = "selectionEmailTemplate";
+/** The two editable emails and where each is stored. */
+export type TemplateKind = "selection" | "payment";
+const TEMPLATES: Record<TemplateKind, { key: string; defaults: SelectionTemplate; log: string }> = {
+  selection: { key: "selectionEmailTemplate", defaults: DEFAULT_SELECTION_TEMPLATE, log: "settings.selection_template" },
+  payment: { key: "paymentEmailTemplate", defaults: DEFAULT_PAYMENT_TEMPLATE, log: "settings.payment_template" },
+};
 /** Written on the shortlist history when a team is rejected in the final review. */
 export const REJECTED_NOTE = "Final review: rejected";
 
 const link = (label: string) => z.string().trim().max(300).refine((u) => safeUrl(u) !== null, `${label}: enter a full link starting with https://`);
-const D = DEFAULT_SELECTION_TEMPLATE;
-/** New fields default, so a template saved before they existed still loads. */
-export const selectionTemplateSchema = z.object({
-  design: z.enum(["technova", "classic"]).default(D.design),
-  subject: z.string().trim().min(1, "Enter a subject.").max(300),
-  headline: z.string().trim().max(120).default(D.headline),
-  subheadline: z.string().trim().max(160).default(D.subheadline),
-  body: z.string().trim().min(1, "Enter the message.").max(8000),
-  telegramNote: z.string().trim().max(1000).default(D.telegramNote),
-  telegramLabel: z.string().trim().max(60).default(D.telegramLabel),
-  websiteCaption: z.string().trim().max(160).default(D.websiteCaption),
-  classicSubject: z.string().trim().min(1, "Enter a subject.").max(300).default(D.classicSubject),
-  classicHeading: z.string().trim().max(200).default(D.classicHeading),
-  classicBody: z.string().trim().min(1, "Enter the message.").max(8000).default(D.classicBody),
-  classicTelegramLabel: z.string().trim().max(60).default(D.classicTelegramLabel),
-  classicRulebookLabel: z.string().trim().max(60).default(D.classicRulebookLabel),
-  classicWebsiteLabel: z.string().trim().max(60).default(D.classicWebsiteLabel),
-  helplineEmail: z.string().trim().max(120).refine((v) => v === "" || /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(v), "Enter a valid helpline email.").default(D.helplineEmail),
-  telegramLink: link("Telegram link"),
-  websiteLink: link("Website link").default(D.websiteLink),
-  rulebookLink: link("Rulebook link").default(D.rulebookLink),
-});
+/** New fields default (to that email's defaults), so a template saved before they existed still loads. */
+export function templateSchema(D: SelectionTemplate) {
+  return z.object({
+    design: z.enum(["technova", "classic"]).default(D.design),
+    emoji: z.string().trim().max(16).default(D.emoji),
+    subject: z.string().trim().min(1, "Enter a subject.").max(300),
+    headline: z.string().trim().max(120).default(D.headline),
+    subheadline: z.string().trim().max(160).default(D.subheadline),
+    body: z.string().trim().min(1, "Enter the message.").max(8000),
+    telegramNote: z.string().trim().max(1000).default(D.telegramNote),
+    telegramLabel: z.string().trim().max(60).default(D.telegramLabel),
+    websiteCaption: z.string().trim().max(160).default(D.websiteCaption),
+    classicSubject: z.string().trim().min(1, "Enter a subject.").max(300).default(D.classicSubject),
+    classicHeading: z.string().trim().max(200).default(D.classicHeading),
+    classicBody: z.string().trim().min(1, "Enter the message.").max(8000).default(D.classicBody),
+    classicTelegramLabel: z.string().trim().max(60).default(D.classicTelegramLabel),
+    classicRulebookLabel: z.string().trim().max(60).default(D.classicRulebookLabel),
+    classicWebsiteLabel: z.string().trim().max(60).default(D.classicWebsiteLabel),
+    helplineEmail: z.string().trim().max(120).refine((v) => v === "" || /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(v), "Enter a valid helpline email.").default(D.helplineEmail),
+    telegramLink: link("Telegram link"),
+    websiteLink: link("Website link").default(D.websiteLink),
+    rulebookLink: link("Rulebook link").default(D.rulebookLink),
+  });
+}
+export const selectionTemplateSchema = templateSchema(DEFAULT_SELECTION_TEMPLATE);
+export type TemplateInput = z.input<typeof selectionTemplateSchema>;
 
-export async function getSelectionTemplate(ctx: Ctx): Promise<SelectionTemplate> {
-  const row = (await ctx.db.select().from(eventSettings).where(eq(eventSettings.key, TEMPLATE_KEY)).limit(1))[0];
-  if (!row) return DEFAULT_SELECTION_TEMPLATE;
+export async function getTemplate(ctx: Ctx, kind: TemplateKind): Promise<SelectionTemplate> {
+  const { key, defaults } = TEMPLATES[kind];
+  const row = (await ctx.db.select().from(eventSettings).where(eq(eventSettings.key, key)).limit(1))[0];
+  if (!row) return defaults;
   try {
-    const parsed = selectionTemplateSchema.safeParse(JSON.parse(row.valueJson));
-    return parsed.success ? parsed.data : DEFAULT_SELECTION_TEMPLATE;
+    const parsed = templateSchema(defaults).safeParse(JSON.parse(row.valueJson));
+    return parsed.success ? parsed.data : defaults;
   } catch {
-    return DEFAULT_SELECTION_TEMPLATE;
+    return defaults;
   }
 }
 
-export async function saveSelectionTemplate(ctx: Ctx, admin: Admin, input: z.input<typeof selectionTemplateSchema>) {
-  const value = selectionTemplateSchema.parse(input);
+export async function saveTemplate(ctx: Ctx, admin: Admin, kind: TemplateKind, input: TemplateInput) {
+  const { key, defaults, log } = TEMPLATES[kind];
+  const value = templateSchema(defaults).parse(input);
   const now = ctx.now();
   await ctx.db.batch([
     ctx.db
       .insert(eventSettings)
-      .values({ key: TEMPLATE_KEY, valueJson: JSON.stringify(value), updatedBy: admin.id, updatedAt: now })
+      .values({ key, valueJson: JSON.stringify(value), updatedBy: admin.id, updatedAt: now })
       .onConflictDoUpdate({ target: eventSettings.key, set: { valueJson: JSON.stringify(value), updatedBy: admin.id, updatedAt: now } }),
-    ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "settings.selection_template" })),
+    ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: log })),
   ]);
   return value;
 }
+
+export const getSelectionTemplate = (ctx: Ctx) => getTemplate(ctx, "selection");
+export const saveSelectionTemplate = (ctx: Ctx, admin: Admin, input: TemplateInput) => saveTemplate(ctx, admin, "selection", input);
 
 export interface SelectionMember {
   position: number;
@@ -199,4 +214,46 @@ export async function sendSelectionEmails(ctx: Ctx, admin: Admin) {
   const queued = after - before;
   await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.final_selection", detail: { teams: selected.length, recipients: entries.length, queued } }));
   return { teams: selected.length, recipients: entries.length, queued, skipped: entries.length - queued };
+}
+
+/* ------------------------------------------------------------------ */
+/* Payment confirmation, sent one team at a time by an admin           */
+/* ------------------------------------------------------------------ */
+
+const PAYMENT_TEMPLATE = "payment_confirmation" as const;
+
+/** Per team: how many payment-confirmation emails are sent, queued or failed. */
+export async function paymentEmailStatus(ctx: Ctx): Promise<Record<string, { sent: number; queued: number; failed: number }>> {
+  const rows = await ctx.db
+    .select({ teamId: emailOutbox.teamId, status: emailOutbox.status, n: sql<number>`count(*)` })
+    .from(emailOutbox)
+    .where(eq(emailOutbox.template, PAYMENT_TEMPLATE))
+    .groupBy(emailOutbox.teamId, emailOutbox.status);
+  const out: Record<string, { sent: number; queued: number; failed: number }> = {};
+  for (const r of rows) {
+    if (!r.teamId) continue;
+    const s = (out[r.teamId] ??= { sent: 0, queued: 0, failed: 0 });
+    if (r.status === "SENT") s.sent += r.n;
+    else if (r.status === "DEAD") s.failed += r.n;
+    else s.queued += r.n;
+  }
+  return out;
+}
+
+/**
+ * Queues the payment-confirmed email for every member of one selected team. Each member
+ * gets it at most once; pressing again only emails members who have not had it.
+ */
+export async function sendPaymentConfirmation(ctx: Ctx, admin: Admin, teamId: string) {
+  const [{ selected }, settings, tpl] = await Promise.all([finalSelection(ctx), getSettings(ctx), getTemplate(ctx, "payment")]);
+  const team = selected.find((t) => t.id === teamId);
+  if (!team) throw new AppError(404, "NOT_FOUND", "This team is not on the final selection list.");
+  const payload = { tpl, vars: templateVars(team, settings, tpl), members: team.members.map((m) => m.fullName), assetBase: ctx.env.APP_URL };
+  const entries: OutboxEntry[] = team.members.map((m) => ({ template: PAYMENT_TEMPLATE, to: m.email, dedupe: `${team.id}:${m.email.toLowerCase()}`, teamId: team.id, payload, requestedBy: admin.id }));
+  const count = async () => (await ctx.db.select({ n: sql<number>`count(*)` }).from(emailOutbox).where(and(eq(emailOutbox.template, PAYMENT_TEMPLATE), eq(emailOutbox.teamId, team.id))))[0]?.n ?? 0;
+  const before = await count();
+  await enqueue(ctx, entries);
+  const queued = (await count()) - before;
+  await ctx.db.insert(adminActivityLogs).values(activityRow(ctx, { adminId: admin.id, action: "emails.payment_confirmation", entityType: "team", entityId: team.id, detail: { recipients: entries.length, queued } }));
+  return { team: team.name, recipients: entries.length, queued };
 }

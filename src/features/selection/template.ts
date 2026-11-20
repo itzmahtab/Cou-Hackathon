@@ -22,6 +22,8 @@ export type SelectionDesign = keyof typeof SELECTION_DESIGNS;
 
 export interface SelectionTemplate {
   design: SelectionDesign;
+  /** The large icon at the top of the TECHNOVA design. */
+  emoji: string;
   /* TECHNOVA design */
   subject: string;
   headline: string;
@@ -46,6 +48,7 @@ export interface SelectionTemplate {
 
 export const DEFAULT_SELECTION_TEMPLATE: SelectionTemplate = {
   design: "technova",
+  emoji: "🎉",
   subject: "Congratulations! You are selected | CoU TECHNOVA 2026",
   headline: "CONGRATULATIONS!",
   subheadline: "YOUR TEAM IS IN THE TOP 40 · AI HACKATHON",
@@ -80,6 +83,42 @@ Faculty of Engineering, Comilla University`,
   telegramLink: DEFAULT_TELEGRAM_LINK,
   websiteLink: DEFAULT_WEBSITE,
   rulebookLink: `${DEFAULT_WEBSITE}/rulebook.pdf`,
+};
+
+/** The "payment confirmed" email, sent per team by an admin once the payment is verified. */
+export const DEFAULT_PAYMENT_TEMPLATE: SelectionTemplate = {
+  ...DEFAULT_SELECTION_TEMPLATE,
+  emoji: "✅",
+  subject: "Payment confirmed: your place in the CoU AI Hackathon 2026 final | {teamName}",
+  headline: "PAYMENT CONFIRMED!",
+  subheadline: "YOUR PLACE IN THE FINAL IS CONFIRMED",
+  body: `Dear Participants,
+
+We have received and verified your team's participation fee of **BDT {feeBdt}**. Your place in the **Final Round** of the AI Hackathon at CoU TECHNOVA 2026 is now **confirmed**.
+
+**See you at the final**
+- Date: **{eventDate}**
+- Venue: {venue}
+- Bring your student ID cards and your laptops (with chargers).`,
+  telegramNote: `**Stay in our official Telegram group.**
+The schedule, reporting time and all final-day updates will be shared there.`,
+  classicSubject: "Payment confirmed: your place in the CoU AI Hackathon 2026 final | {teamName}",
+  classicHeading: "Payment confirmed, {teamName}! ✅",
+  classicBody: `Dear {memberNames},
+
+We have received and verified your team's participation fee of **BDT {feeBdt}**. Your place in the final round of the **CoU AI Hackathon 2026** is now **confirmed**.
+
+**See you at the final**
+1. Date: **{eventDate}** at {venue}.
+2. Bring your student ID cards and your laptops (with chargers).
+3. **[Click here]({telegramLink})** to stay in our Telegram group for the schedule and final-day updates.
+4. Read the **[rulebook]({rulebookLink})** before the final.
+
+If you have any questions, reply to this email or ask in the Telegram group.
+
+Best regards,
+**CoU AI Hackathon 2026 Organising Committee**
+Faculty of Engineering, Comilla University`,
 };
 
 export const PLACEHOLDERS = {
@@ -273,7 +312,7 @@ ${members.map((m, i) => `${i + 1}. ${e(m)}`).join("<br>")}
 </td></tr>
 
 <tr><td align="center" style="padding:36px 28px 10px;">
-<div style="font-size:44px;line-height:1;">🎉</div>
+${tpl.emoji.trim() ? `<div style="font-size:44px;line-height:1;">${e(tpl.emoji)}</div>` : ""}
 <div style="font-size:30px;font-weight:bold;color:#ffffff;margin-top:12px;">${e(f(tpl.headline))}</div>
 ${tpl.subheadline.trim() ? `<div style="font-size:16px;color:#ffa530;margin-top:8px;letter-spacing:1px;font-weight:bold;">${e(f(tpl.subheadline))}</div>` : ""}
 </td></tr>
