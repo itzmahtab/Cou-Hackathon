@@ -1,5 +1,5 @@
 import { and, desc, eq, like, sql, type SQL } from "drizzle-orm";
-import { drainNowAction, resendEmailAction, testEmailAction } from "@/app/admin/actions/results";
+import { drainNowAction, resendEmailAction, setEmailEnabledAction, testEmailAction } from "@/app/admin/actions/results";
 import { savePaymentTemplateAction, saveSelectionTemplateAction, sendPaymentConfirmationAction, sendSelectionEmailsAction } from "@/app/admin/actions/selection";
 import { ActionForm } from "@/components/admin/action-form";
 import { SelectionTemplateEditor } from "@/components/admin/selection-template-editor";
@@ -9,6 +9,7 @@ import { DEFAULT_PAYMENT_TEMPLATE } from "@/features/selection/template";
 import { can } from "@/lib/auth/permissions";
 import { AdminHeader, Empty, Section, StatusBadge } from "@/components/admin/ui";
 import { smtpPasswordSource } from "@/features/email/config";
+import { CANCELLED_NOTE, isEmailEnabled } from "@/features/email/switch";
 import { TEMPLATE_LABELS, type TemplateName } from "@/features/email/templates";
 import { EMAIL_STATUSES } from "@/lib/constants";
 import { emailOutbox, teams } from "@/lib/db/schema";
@@ -41,6 +42,7 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
   const paySample = sampleTeam ? { vars: templateVars(sampleTeam, sel.settings, payTpl), members: sampleTeam.members.map((m) => m.fullName), label: `filled in for ${sampleTeam.name}` } : null;
   const provider = ctx.env.EMAIL_PROVIDER;
   const smtpSource = await smtpPasswordSource(ctx);
+  const emailOn = await isEmailEnabled(ctx);
 
   return (
     <>
@@ -54,6 +56,30 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
           </div>
         }
       />
+      <Section
+        title={emailOn ? "Email sending: ON" : "Email sending: OFF"}
+        className={emailOn ? "mb-6 border-success/40" : "mb-6 border-danger/60 bg-danger/5"}
+        actions={
+          <ActionForm
+            action={setEmailEnabledAction}
+            submitLabel={emailOn ? "Turn email off" : "Turn email on"}
+            submitClass={emailOn ? "btn-danger" : "btn-primary"}
+            confirm={
+              emailOn
+                ? "Turn off all email? Nothing will be sent, and every email still in the queue is cancelled for good."
+                : "Turn email back on? New emails will be sent from now on. Emails cancelled while it was off stay cancelled."
+            }
+          >
+            <input type="hidden" name="enabled" value={emailOn ? "0" : "1"} />
+          </ActionForm>
+        }
+      >
+        <p className="text-sm text-muted">
+          {emailOn
+            ? "Emails are sent automatically: registration and payment confirmations, status codes and anything you send from this page. Turning email off stops all of them at once and cancels whatever is waiting."
+            : `Nothing is being sent. Any email the site creates is cancelled instead of sent (shown below as “gave up”: ${CANCELLED_NOTE}). Teams cannot get a status code by email; they can still use the personal link from their registration email.`}
+        </p>
+      </Section>
       <Section title={`Payment confirmation email: send per team (${sel.selected.length} teams)`} className="mb-6 border-success/40">
         <p className="mb-4 text-sm text-muted">
           After you have verified a team&apos;s bKash payment, press <strong>Send payment confirmation</strong> on that team. It emails the payment-confirmed template (edit it below) to every member of that team only, from{" "}

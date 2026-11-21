@@ -5,6 +5,7 @@ import { AppError } from "@/lib/http";
 import { hmacHex, safeEqual, uuid } from "@/lib/ids";
 import { emailEnv } from "./config";
 import { getProvider, type EmailProvider } from "./providers";
+import { cancelQueuedEmails, isEmailEnabled } from "./switch";
 import { renderEmail, type TemplateName } from "./templates";
 
 export const MAX_ATTEMPTS = 5;
@@ -72,6 +73,11 @@ export async function verifyStatusSignature(ctx: Ctx, participantId: string, sig
  * cron run and an after-response kick can overlap without sending twice.
  */
 export async function drainOutbox(ctx: Ctx, limit?: number): Promise<{ sent: number; failed: number }> {
+  // Email switched off in Admin -> Emails: send nothing, and cancel whatever is waiting.
+  if (!(await isEmailEnabled(ctx))) {
+    await cancelQueuedEmails(ctx);
+    return { sent: 0, failed: 0 };
+  }
   const batch = limit ?? Math.max(1, Number(ctx.env.EMAIL_BATCH_SIZE ?? 10) || 10);
   const due = await ctx.db
     .select()
