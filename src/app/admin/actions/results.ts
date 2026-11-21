@@ -6,6 +6,7 @@ import { runAfter } from "@/lib/ctx";
 import { AppError } from "@/lib/http";
 import { requireAdmin, runAction, type ActionResult } from "@/lib/server";
 import { drainOutbox, resendEmail } from "@/features/email/outbox";
+import { isEmailEnabled, setEmailEnabled } from "@/features/email/switch";
 import { autoRank, publishResults, resultSchema, saveResult, unpublishResults } from "@/features/results/service";
 
 export async function saveResultAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -58,6 +59,7 @@ export async function resendEmailAction(_: ActionResult | null, fd: FormData): P
 export async function drainNowAction(): Promise<ActionResult> {
   return runAction(async () => {
     const { ctx } = await requireAdmin("emails.manage");
+    if (!(await isEmailEnabled(ctx))) throw new AppError(409, "EMAIL_OFF", "Email sending is turned off. Turn it on first.");
     const r = await drainOutbox(ctx, 25);
     revalidatePath("/admin/emails");
     return { message: `Sent ${r.sent}, failed ${r.failed}.` };
@@ -68,6 +70,7 @@ export async function drainNowAction(): Promise<ActionResult> {
 export async function testEmailAction(): Promise<ActionResult> {
   return runAction(async () => {
     const { ctx, admin } = await requireAdmin("emails.manage");
+    if (!(await isEmailEnabled(ctx))) throw new AppError(409, "EMAIL_OFF", "Email sending is turned off. Turn it on first.");
     const { getProvider } = await import("@/features/email/providers");
     const { emailEnv } = await import("@/features/email/config");
     const { renderEmail } = await import("@/features/email/templates");
@@ -89,5 +92,20 @@ export async function testEmailAction(): Promise<ActionResult> {
     } finally {
       provider.close?.();
     }
+  });
+}
+
+/** The master email switch. Turning it off also cancels everything still queued. */
+export async function setEmailEnabledAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const { ctx, admin } = await requireAdmin("emails.manage");
+    const enabled = fd.get("enabled") === "1";
+    const { cancelled } = await setEmailEnabled(ctx, enabled, admin.id);
+    revalidatePath("/admin/emails");
+    return {
+      message: enabled
+        ? "Email sending is on. New emails will go out; cancelled ones stay cancelled."
+        : `Email sending is off. Nothing will be sent${cancelled ? `, and ${cancelled} queued email${cancelled === 1 ? " was" : "s were"} cancelled` : ""}.`,
+    };
   });
 }

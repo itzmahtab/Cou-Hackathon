@@ -1,4 +1,5 @@
 import { and, desc, eq, isNull, lt, sql } from "drizzle-orm";
+import { isEmailEnabled } from "../email/switch";
 import type { Ctx } from "@/lib/ctx";
 import { attendance, ideaSubmissions, participants, payments, statusOtps, teams } from "@/lib/db/schema";
 import { AppError } from "@/lib/http";
@@ -58,6 +59,9 @@ async function findParticipant(ctx: Ctx, registrationId: string, email: string) 
 
 /** Always resolves the same way, whether or not the pair matches a registration. */
 export async function requestStatusOtp(ctx: Ctx, registrationId: string, email: string): Promise<void> {
+  if (!(await isEmailEnabled(ctx))) {
+    throw new AppError(503, "EMAIL_OFF", "Codes cannot be emailed right now. Use the personal link from your registration email, or contact the organisers.");
+  }
   const participant = await findParticipant(ctx, registrationId, email);
   if (!participant) return;
   const code = newOtp();
