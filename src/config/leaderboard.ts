@@ -55,6 +55,4 @@ export const LEADERBOARD: LeaderboardEntry[] = [
   { rank: 40, team: "Tesseract", total: 66 },
   { rank: 42, team: "NeuroForge", total: 65 },
   { rank: 43, team: "Zero_Bugs_Zone", total: 61 },
-  { rank: 44, team: "Neural Ninjas", total: 56 },
-  { rank: 45, team: "Cuet_Al_Masaar", total: 52 },
 ];
